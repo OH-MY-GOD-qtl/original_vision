@@ -1,0 +1,26 @@
+# ---- CMake 构建产物 ----
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# ---- 海康 MVS SDK 运行日志 ----
+MvSdkLog/
+
+# ---- 编译中间产物 ----
+*.o
+*.obj
+*.d
+*.out
+
+# ---- 系统/编辑器杂项 ----
+.DS_Store
+*.swp
+*~
+
+# ---- 第三方库的备份/临时副本（体积大且无必要，别提交）----
+.bak/
+*.bak
+*.orig
+*.rej
