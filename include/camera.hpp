@@ -1,20 +1,14 @@
 #pragma once
 
 #include <chrono>
+#include <string>
+
 #include <opencv2/core.hpp>
 
 namespace vision
 {
 
-// 相机参数，值全部来自配置文件
-struct CameraConfig
-{
-    double exposure_ms;  // 单位 ms
-    double gain;         // 单位 dB
-    double transport_ms; // 曝光结束到主机拿到帧的传输延迟，单位 ms
-};
-
-// 一帧：图像 + 曝光中点时刻
+// 一帧：图像与曝光中点时刻绑在一起，不会配错
 struct Frame
 {
     cv::Mat img;
@@ -25,13 +19,13 @@ struct Frame
 class Camera
 {
   public:
-    explicit Camera(const CameraConfig &cfg);
+    explicit Camera(const std::string &config_path);
     ~Camera();
 
     Camera(const Camera &) = delete; // 句柄独占，不许拷贝
     Camera &operator=(const Camera &) = delete;
 
-    Frame grab(); // 取一帧，时间戳是曝光中点，来自相机自身的设备时钟
+    void read(Frame &frame); // 写入 frame.img（复用其内存）与 frame.timestamp
 
   private:
     void sync_clock(unsigned long long dev_ts); // 首帧把设备时钟对到主机时钟

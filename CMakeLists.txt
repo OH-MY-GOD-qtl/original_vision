@@ -24,10 +24,10 @@ set_target_properties(MvCameraControl PROPERTIES
 # 相机模块：SDK 头与库只出现在它的实现里，调用方只需要 include/
 add_library(camera STATIC src/camera.cpp)
 target_include_directories(camera PUBLIC ${CMAKE_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(camera PUBLIC ${OpenCV_LIBS} PRIVATE MvCameraControl)
+target_link_libraries(camera PUBLIC ${OpenCV_LIBS} PRIVATE MvCameraControl yaml-cpp)
 
 add_executable(camera_test test/camera_test.cpp)
-target_link_libraries(camera_test PRIVATE camera yaml-cpp)
+target_link_libraries(camera_test PRIVATE camera)
 set_target_properties(camera_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
 
 add_subdirectory(calibration)
