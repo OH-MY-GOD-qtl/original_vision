@@ -12,9 +12,7 @@
 // 参数：取配置文件路径，缺省用默认值
 static std::string parse_config_path(int argc, char *argv[])
 {
-    const std::string keys = "{@config-path   | configs/camera.yaml | yaml配置文件路径 }";
-    cv::CommandLineParser cli(argc, argv, keys);
-    return cli.get<std::string>(0);
+    return argc > 1 ? argv[1] : "configs/camera.yaml";
 }
 
 // 配置：只保存参数，不碰硬件
@@ -25,22 +23,9 @@ static vision::CameraConfig load_config(const std::string &path)
     vision::CameraConfig cfg;
     cfg.exposure_ms = yaml["exposure_ms"].as<double>();
     cfg.gain = yaml["gain"].as<double>();
+    cfg.transport_ms = yaml["transport_ms"].as<double>();
     return cfg;
 }
-
-// 帧率：每次 tick 返回距上次的瞬时值
-struct FpsMeter
-{
-    std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
-
-    double tick()
-    {
-        auto now = std::chrono::steady_clock::now();
-        std::chrono::duration<double> dt = now - last;
-        last = now;
-        return 1 / dt.count();
-    }
-};
 
 // 显示：窗口、刷新、按键退出
 struct Viewer
@@ -64,15 +49,17 @@ int main(int argc, char *argv[])
 
     Viewer viewer;
 
-    FpsMeter fps;
+    auto last = camera.grab().timestamp; // 首帧只用来定帧率基准
 
     while (true)
     {
-        const cv::Mat img = camera.grab(); // 一帧 BGR，SDK 缓冲区已归还
+        const vision::Frame frame = camera.grab(); // 一帧 BGR + 曝光中点时刻
 
-        std::printf("%.2f fps\n", fps.tick());
+        const double dt = std::chrono::duration<double>(frame.timestamp - last).count(); // 用相机时间戳算帧率
+        last = frame.timestamp;
+        std::printf("%.2f fps\n", 1 / dt);
 
-        if (viewer.show(img))
+        if (viewer.show(frame.img))
             break;
     }
 

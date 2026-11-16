@@ -29,4 +29,6 @@ target_link_libraries(vision_camera PUBLIC ${OpenCV_LIBS} PRIVATE MvCameraContro
 add_executable(hik_capture test/camera_test.cpp)
 target_link_libraries(hik_capture PRIVATE vision_camera yaml-cpp)
 set_target_properties(hik_capture PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
+
+add_subdirectory(calibration)
  
