@@ -15,9 +15,18 @@ endif()
 
 set(SDK ${CMAKE_SOURCE_DIR}/third_party/camera_sdk/hikrobot)
 
+# 导入 SDK：用绝对路径直接链，-l 依赖的库目录不会从静态库传播出去
+add_library(MvCameraControl SHARED IMPORTED)
+set_target_properties(MvCameraControl PROPERTIES
+  IMPORTED_LOCATION ${SDK}/lib/${SDK_ARCH}/libMvCameraControl.so
+  INTERFACE_INCLUDE_DIRECTORIES ${SDK}/include)
+
+# 相机模块：SDK 头与库只出现在它的实现里，调用方只需要 include/
+add_library(vision_camera STATIC src/camera.cpp)
+target_include_directories(vision_camera PUBLIC ${CMAKE_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(vision_camera PUBLIC ${OpenCV_LIBS} PRIVATE MvCameraControl)
+
 add_executable(hik_capture test/camera_test.cpp)
-target_include_directories(hik_capture PRIVATE ${SDK}/include ${OpenCV_INCLUDE_DIRS})
-target_link_directories(hik_capture PRIVATE ${SDK}/lib/${SDK_ARCH})
-target_link_libraries(hik_capture PRIVATE MvCameraControl ${OpenCV_LIBS} yaml-cpp)
+target_link_libraries(hik_capture PRIVATE vision_camera yaml-cpp)
 set_target_properties(hik_capture PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
  
