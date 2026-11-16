@@ -1,5 +1,5 @@
 # 海康 MV-CS016-10UC 相机参数
-# 用法：./build/hik_capture [配置路径]   默认 configs/camera.yaml
+# 用法：./build/camera_test [配置路径]   默认 configs/camera.yaml
 
 # 手动曝光，单位 ms
 exposure_ms: 5.0
