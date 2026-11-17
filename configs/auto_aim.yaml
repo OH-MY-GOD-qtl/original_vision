@@ -28,8 +28,8 @@ lightbar_gap: 130
 handeye_yaw_deg: 0.0
 handeye_pitch_deg: 0.0
 handeye_roll_deg: 0.0
-# 光心相对云台转轴，mm，x 右 y 下 z 前（相机在炮管左边，故 x 取负）
-handeye_offset_mm: [-54.12, 202.50, 157.00]
+# 光心相对俯仰轴（相机随俯仰转），mm，x 右 y 下 z 前（相机在炮管左边，故 x 取负）
+handeye_offset_mm: [-54.12, 8.00, 157.00]
 
 # ---- 跟踪 ----
 # TODO 过程噪声、观测噪声、最大丢失帧数
