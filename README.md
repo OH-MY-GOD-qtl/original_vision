@@ -43,6 +43,7 @@ cmake --build build -j
 ```bash
 ./build/camera_test configs/camera.yaml                   # 相机取流并显示，按 q 退出
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
+./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Tracker 未实现，静默空转）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
