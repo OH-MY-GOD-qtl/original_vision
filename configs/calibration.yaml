@@ -1,0 +1,14 @@
+# 相机内参标定：采集与计算共用这一份
+# 用法：./build/calibration/capture configs/calibration.yaml assets/calib
+#       ./build/calibration/camera_calib configs/calibration.yaml assets/calib
+
+# ---- 相机 ----
+exposure_ms: 5.0
+gain: 16.0
+transport_ms: 0.0
+
+# ---- 棋盘格 ----
+# 标定板 GP290-20-12X9：外框 290mm，方格 20mm，12×9 格 → 内角点 11×8
+pattern_cols: 11   # 内角点列数，等于方格列数减一
+pattern_rows: 8    # 内角点行数，等于方格行数减一
+square_mm: 20      # 方格边长，mm

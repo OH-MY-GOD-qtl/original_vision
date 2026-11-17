@@ -46,6 +46,8 @@ cmake --build build -j
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Solver 未实现，静默空转）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
+./build/calibration/capture configs/calibration.yaml assets/calib      # 采集棋盘格，s 存图 q 退出
+./build/calibration/camera_calib configs/calibration.yaml assets/calib # 算内参，打印可粘贴的 yaml
 ```
 
 ## 目录
@@ -90,9 +92,23 @@ third_party/   海康 MVS SDK
 灯条判定两层：`min_lightbar_area` 滤面积过小的碎点，`min_lightbar_ratio` 滤不够细长的。
 配对再过四关：高度相近、倾角一致、中心对齐、间距像装甲板（倾角差阈值 `max_tilt_diff_deg`）。
 
+## 相机内参标定
+
+采集和计算分成两个工具：采集要举着板子摆姿势，计算会反复跑。
+
+1. 跑 `capture`，实时预览上叠加识别到的角点，**识别到才允许存图**。按 `s` 存一张，按 `q` 退出。
+   摆 15~20 个姿势：覆盖画面四角与中心、远近各一档、板面绕两个轴各倾斜 20~40 度；
+   别让角点贴边，避开反光和过曝。
+2. 跑 `camera_calib`，同一个目录，逐张打印重投影误差，最后打印可直接粘进 `auto_aim.yaml` 的
+   `camera_matrix` 与 `distort_coeffs`。某张误差明显偏大就删掉重算。
+
+标定板几何在 `configs/calibration.yaml`：`pattern_cols` / `pattern_rows` 是**内角点**数
+（格子数减一），`square_mm` 是方格边长。平均重投影误差 0.5 px 以内可用。
+
 ## 配置
 
-`configs/auto_aim.yaml` 是总配置，各段已有 TODO 占位；`configs/camera.yaml` 供相机测试单独使用。
+`configs/auto_aim.yaml` 是总配置，各段已有 TODO 占位；`configs/camera.yaml` 供相机测试单独使用；
+`configs/calibration.yaml` 供相机标定使用，相机段之外多一份棋盘格几何。
 
 ## 待办
 

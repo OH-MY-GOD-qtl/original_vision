@@ -24,3 +24,6 @@ MvSdkLog/
 *.bak
 *.orig
 *.rej
+
+# ---- 标定采集的图片 ----
+assets/calib/
