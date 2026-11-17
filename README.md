@@ -81,6 +81,9 @@ third_party/   海康 MVS SDK
 - `pitch = atan2(y, z)`，正为向下
 - 装甲板模型点取灯条中轴线四端点：$(\pm 65, \pm 27.5, 0)$ mm，顺序左上→右上→右下→左下
 
+`Armor::xyz` 与 `Target` 存**世界系**坐标，由 $R_{gimbal\to world} = R_y(\text{yaw})\,R_x(-\text{pitch})$ 变换得到，
+云台转动时静止目标的坐标不变。
+
 这套符号下全链路没有取负：目标在图像中心偏右对应 yaw 正，偏下对应 pitch 正。
 
 ## 相机模块

@@ -10,7 +10,7 @@
 namespace vision
 {
 
-// 解算：像素角点 + 云台姿态 → 云台系坐标
+// 解算：像素角点 + 云台姿态 → 世界系坐标
 // 云台系：x 右、y 下、z 前（右手系，与相机系同构，对准时手眼为单位阵）
 // 角度：yaw = atan2(x, z) 正为向右；pitch = atan2(y, z) 正为向下
 // 方向向量 = (sin yaw·cos pitch, sin pitch, cos yaw·cos pitch)

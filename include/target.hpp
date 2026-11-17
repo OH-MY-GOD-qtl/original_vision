@@ -5,7 +5,7 @@
 namespace vision
 {
 
-// 跟踪结果：云台系位置与速度
+// 跟踪结果：世界系位置与速度
 struct Target
 {
     Eigen::Vector3d xyz = Eigen::Vector3d::Zero();

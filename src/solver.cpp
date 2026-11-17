@@ -58,7 +58,8 @@ void Solver::solve(Armor &armor)
         return; // 解算失败，solved 保持 false
 
     const Eigen::Vector3d p_camera(tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2));
-    armor.xyz = R_camera2gimbal_ * p_camera + t_camera2gimbal_;
+    const Eigen::Vector3d p_pitch = R_camera2gimbal_ * p_camera + t_camera2gimbal_; // 相机系 → 俯仰系
+    armor.xyz = R_gimbal2world_ * p_pitch; // 俯仰系 → 世界系，云台转动时静止目标坐标不变
     armor.solved = true;
 }
 
