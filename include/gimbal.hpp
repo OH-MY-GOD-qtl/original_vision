@@ -18,7 +18,7 @@ class Gimbal
     double bullet_speed() const { return bullet_speed_; }
 
   private:
-    double bullet_speed_ = 0.0; // TODO: 从配置或下位机读数
+    double bullet_speed_; // 弹速，单位 m/s
 };
 
 } // namespace vision

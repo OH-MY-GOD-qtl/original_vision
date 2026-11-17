@@ -5,7 +5,6 @@
 
 #include "aimer.hpp"
 #include "camera.hpp"
-#include "command.hpp"
 #include "detector.hpp"
 #include "gimbal.hpp"
 #include "solver.hpp"
@@ -35,12 +34,6 @@ int main(int argc, char **argv)
             solver.solve(armor); // 失败时 solved 保持 false，tracker 会跳过
 
         auto target = tracker.track(armors, frame.timestamp);
-        if (!target)
-        {
-            gimbal.send(vision::Command::idle());
-            continue;
-        }
-
-        gimbal.send(aimer.aim(*target, gimbal.bullet_speed()));
+        gimbal.send(aimer.aim(target, gimbal.bullet_speed(), frame.timestamp));
     }
 }

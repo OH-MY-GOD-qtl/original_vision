@@ -1,13 +1,60 @@
 #include "aimer.hpp"
 
+#include <yaml-cpp/yaml.h>
+
+namespace
+{
+
+constexpr double deg2rad = 3.14159265358979323846 / 180.0;
+
+// 朝 0 走一步，单步不超过 step
+double toward_zero(double value, double step)
+{
+    if (value > step)
+        return value - step;
+    if (value < -step)
+        return value + step;
+    return 0.0;
+}
+
+} // namespace
+
 namespace vision
 {
 
-Aimer::Aimer(const std::string &) {} // TODO: 读弹道参数
-
-Command Aimer::aim(const Target &, double) const
+Aimer::Aimer(const std::string &config_path)
 {
-    return Command::idle(); // TODO: 重力补偿 + 迭代求角
+    const YAML::Node yaml = YAML::LoadFile(config_path); // 缺少配置项或类型错误会抛异常
+    lost_hold_s_ = yaml["lost_hold_ms"].as<double>() / 1000.0;
+    return_rad_per_s_ = yaml["return_deg_per_s"].as<double>() * deg2rad;
+}
+
+Command Aimer::aim(
+    const std::optional<Target> &target, double bullet_speed, std::chrono::steady_clock::time_point t)
+{
+    const double dt = std::chrono::duration<double>(t - last_call_).count();
+    last_call_ = t;
+
+    if (target)
+    {
+        last_target_ = t;
+        last_command_ = solve(*target, bullet_speed, t);
+        return last_command_;
+    }
+
+    if (std::chrono::duration<double>(t - last_target_).count() < lost_hold_s_)
+        return last_command_; // 停留期：保持原位
+
+    const double step = return_rad_per_s_ * dt; // 每次调用只走这么多，所以是缓慢归零
+    last_command_.yaw = toward_zero(last_command_.yaw, step);
+    last_command_.pitch = toward_zero(last_command_.pitch, step);
+    last_command_.distance = 0.0;
+    return last_command_;
+}
+
+Command Aimer::solve(const Target &, double, std::chrono::steady_clock::time_point) const
+{
+    return {}; // TODO: 重力补偿 + 迭代求角，输出 yaw/pitch/distance
 }
 
 } // namespace vision

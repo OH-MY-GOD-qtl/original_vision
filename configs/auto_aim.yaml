@@ -15,7 +15,10 @@ transport_ms: 0.0
 # TODO 过程噪声、观测噪声、最大丢失帧数
 
 # ---- 瞄准 ----
-# TODO 重力补偿、迭代次数
+# 丢失目标后原位停留 lost_hold_ms，再按 return_deg_per_s 缓慢归零
+lost_hold_ms: 3000.0
+return_deg_per_s: 30.0
 
 # ---- 云台 ----
+bullet_speed: 23.0 # 弹速，m/s
 # TODO 串口设备与波特率
