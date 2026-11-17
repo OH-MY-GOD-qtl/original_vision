@@ -29,7 +29,7 @@ class Solver
     std::vector<cv::Point3f> model_; // 装甲板四角，单位 m，左上 右上 右下 左下
 
     Eigen::Matrix3d R_camera2gimbal_ = Eigen::Matrix3d::Identity(); // 相机 → 云台
-    Eigen::Vector3d t_camera2gimbal_ = Eigen::Vector3d::Zero();     // 光心相对俯仰轴，m
+    Eigen::Vector3d t_camera2gimbal_ = Eigen::Vector3d::Zero();     // 光心相对云台原点，m
 
     Eigen::Quaterniond R_gimbal2world_ = Eigen::Quaterniond::Identity();
 };

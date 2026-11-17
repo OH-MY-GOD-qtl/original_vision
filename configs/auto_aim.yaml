@@ -28,7 +28,8 @@ lightbar_gap: 130
 handeye_yaw_deg: 0.0
 handeye_pitch_deg: 0.0
 handeye_roll_deg: 0.0
-# 光心相对俯仰轴（相机随俯仰转），mm，x 右 y 下 z 前（相机在炮管左边，故 x 取负）
+# 光心相对云台原点，mm，x 右 y 下 z 前（相机在炮管左边，故 x 取负）
+# 该向量随俯仰转动，因为相机装在俯仰臂上
 handeye_offset_mm: [-54.12, 8.00, 157.00]
 
 # ---- 跟踪 ----
