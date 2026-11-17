@@ -18,7 +18,18 @@ min_armor_ratio: 0.5        # 两灯条间距/灯条高 下限
 max_armor_ratio: 4.0        # 两灯条间距/灯条高 上限
 
 # ---- 解算 ----
-# TODO 相机内参、畸变系数、手眼 R_camera2gimbal
+# 内参来自 camera_calib，17 张，平均重投影误差 0.157 px
+camera_matrix: [1807.43119, 0, 705.707538, 0, 1806.22264, 541.329513, 0, 0, 1]
+distort_coeffs: [-0.0756689153, 0.1281247, 5.57990328e-05, -2.47610297e-05, 0]
+# 装甲板：灯条长边、两灯条中心线间距，mm
+lightbar_length: 55
+lightbar_gap: 130
+# 手眼：相机相对炮管的安装角，度；正为偏右 / 偏下 / 图像顺时针
+handeye_yaw_deg: 0.0
+handeye_pitch_deg: 0.0
+handeye_roll_deg: 0.0
+# 光心相对云台转轴，mm，x 右 y 下 z 前（相机在炮管左边，故 x 取负）
+handeye_offset_mm: [-54.12, 202.50, 157.00]
 
 # ---- 跟踪 ----
 # TODO 过程噪声、观测噪声、最大丢失帧数

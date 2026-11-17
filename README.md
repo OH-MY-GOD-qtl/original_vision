@@ -10,7 +10,7 @@
 |---|---|---|
 | `Camera` | ✅ 已实现 | 海康相机取流，输出图像 + 曝光中点时刻 |
 | `Detector` | ✅ 已实现 | 图像 → 装甲板像素角点（传统色差法，参数待真机标定） |
-| `Solver` | ⬜ 空 | 角点 + 云台姿态 → 云台系坐标 |
+| `Solver` | ✅ 已实现 | 像素角点 → 云台系坐标（IPPE PnP + 手眼变换） |
 | `Tracker` | ⬜ 空 | 多帧装甲板 → 唯一目标（滤波预测） |
 | `Aimer` | 🟡 部分 | 无目标时停留后缓慢归零；弹道解算未实现 |
 | `Gimbal` | ⬜ 空 | 指令 → 下位机串口 |
@@ -43,7 +43,7 @@ cmake --build build -j
 ```bash
 ./build/camera_test configs/camera.yaml                   # 相机取流并显示，按 q 退出
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
-./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Solver 未实现，静默空转）
+./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Tracker 未实现，静默空转）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
 ./build/calibration/capture configs/calibration.yaml assets/calib      # 采集棋盘格，s 存图 q 退出
@@ -71,6 +71,16 @@ third_party/   海康 MVS SDK
   - `target.hpp` —— Tracker 产、Aimer 消费
   - `command.hpp` —— Aimer 产、Gimbal 消费
 - 图像与时间戳用 `Frame` 强绑定，不会配错
+
+## 坐标与角度约定
+
+云台系取 $x$ 右、$y$ 下、$z$ 前，与相机系同构，机械对准时手眼矩阵就是单位阵。
+
+- `yaw = atan2(x, z)`，正为向右
+- `pitch = atan2(y, z)`，正为向下
+- 装甲板模型点取灯条中轴线四端点：$(\pm 65, \pm 27.5, 0)$ mm，顺序左上→右上→右下→左下
+
+这套符号下全链路没有取负：目标在图像中心偏右对应 yaw 正，偏下对应 pitch 正。
 
 ## 相机模块
 
@@ -112,7 +122,7 @@ third_party/   海康 MVS SDK
 
 ## 待办
 
-按顺序补齐：`Detector` → `Solver` → `Tracker` → `Aimer` → `Gimbal` → `Imu`
+按顺序补齐：`Tracker` → `Aimer` → `Gimbal` → `Imu`
 
 `Imu` 最后接入，在此之前 `apps/auto_aim.cpp` 用单位四元数顶替姿态。
 
