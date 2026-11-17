@@ -9,10 +9,10 @@
 | 模块 | 状态 | 职责 |
 |---|---|---|
 | `Camera` | ✅ 已实现 | 海康相机取流，输出图像 + 曝光中点时刻 |
-| `Detector` | ⬜ 空 | 图像 → 装甲板像素角点 |
+| `Detector` | ✅ 已实现 | 图像 → 装甲板像素角点（传统色差法，参数待真机标定） |
 | `Solver` | ⬜ 空 | 角点 + 云台姿态 → 云台系坐标 |
 | `Tracker` | ⬜ 空 | 多帧装甲板 → 唯一目标（滤波预测） |
-| `Aimer` | ⬜ 空 | 目标 + 弹速 → 云台指令 |
+| `Aimer` | 🟡 部分 | 无目标时停留后缓慢归零；弹道解算未实现 |
 | `Gimbal` | ⬜ 空 | 指令 → 下位机串口 |
 | `Imu` | ⬜ 未建 | 姿态历史查询（`imu.at(t)`） |
 
@@ -41,9 +41,11 @@ cmake --build build -j
 ## 运行
 
 ```bash
-./build/camera_test configs/camera.yaml                  # 相机取流并显示，按 q 退出
-./build/apps/auto_aim configs/auto_aim.yaml              # 总链路（检测为空，静默空转）
-./build/calibration/transport_delay configs/camera.yaml  # 传输延迟标定
+./build/camera_test configs/camera.yaml                   # 相机取流并显示，按 q 退出
+./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
+./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Solver 未实现，静默空转）
+./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
+./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
 ```
 
 ## 目录
@@ -79,6 +81,14 @@ third_party/   海康 MVS SDK
 - **不做防御**：相机断连、取帧失败的返回码一律不检查（理想环境前提）
 
 标定 `transport_ms`：跑 `transport_delay`，把建议值写回 `camera.yaml`。
+
+## 检测参数标定
+
+跑 `detector_tuning`：左侧窗口原图叠加绿框灯条与红线配对，右侧窗口是灯条二值图，
+滑动条实时调全部检测参数，ESC 退出时打印可直接粘贴回 `auto_aim.yaml` 的配置。
+
+灯条判定两层：`min_lightbar_area` 滤面积过小的碎点，`min_lightbar_ratio` 滤不够细长的。
+配对再过四关：高度相近、倾角一致、中心对齐、间距像装甲板（倾角差阈值 `max_tilt_diff_deg`）。
 
 ## 配置
 

@@ -39,6 +39,9 @@ add_executable(camera_test test/camera_test.cpp)
 target_link_libraries(camera_test PRIVATE camera)
 set_target_properties(camera_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
 
+add_executable(detector_test test/detector_test.cpp)
+target_link_libraries(detector_test PRIVATE camera detector)
+set_target_properties(detector_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
+
 add_subdirectory(calibration)
 add_subdirectory(apps)
- 
