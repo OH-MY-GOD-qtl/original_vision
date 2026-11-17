@@ -163,9 +163,9 @@ static void draw(cv::Mat &img, const std::vector<cv::RotatedRect> &bars,
         cv::line(img, bars[i].center, bars[j].center, {0, 0, 255}, 2);
 }
 
-int main(int argc, char *argv[])
+int main(int, char *argv[])
 {
-    const std::string path = argc > 1 ? argv[1] : "configs/auto_aim.yaml";
+    const std::string path = argv[1];
     const YAML::Node yaml = YAML::LoadFile(path);
 
     // 从现有配置起步，滑动条在此基础上微调

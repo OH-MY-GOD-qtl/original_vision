@@ -24,9 +24,9 @@ static double measure_convert_ms(cv::Size size)
     return std::chrono::duration<double, std::milli>(cost).count() / 100;
 }
 
-int main(int argc, char *argv[])
+int main(int, char *argv[])
 {
-    const std::string path = argc > 1 ? argv[1] : "configs/camera.yaml";
+    const std::string path = argv[1];
     const double exposure_ms = YAML::LoadFile(path)["exposure_ms"].as<double>(); // 半曝光补偿要用
 
     vision::Camera camera(path);

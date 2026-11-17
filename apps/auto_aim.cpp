@@ -10,9 +10,9 @@
 #include "solver.hpp"
 #include "tracker.hpp"
 
-int main(int argc, char **argv)
+int main(int, char **argv)
 {
-    const std::string config_path = argc > 1 ? argv[1] : "configs/auto_aim.yaml";
+    const std::string config_path = argv[1];
 
     vision::Camera camera(config_path);
     vision::Solver solver(config_path);
