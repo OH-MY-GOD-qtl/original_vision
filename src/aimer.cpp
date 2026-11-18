@@ -39,8 +39,11 @@ Command Aimer::aim(
     {
         last_target_ = t;
         last_command_ = solve(*target, bullet_speed, t);
+        last_command_.is_empty = false;
         return last_command_;
     }
+
+    last_command_.is_empty = true; // 目标丢了，但停留和归零仍由视觉接管
 
     if (std::chrono::duration<double>(t - last_target_).count() < lost_hold_s_)
         return last_command_; // 停留期：保持原位

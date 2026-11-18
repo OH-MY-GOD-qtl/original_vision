@@ -19,7 +19,7 @@ class Solver
   public:
     explicit Solver(const std::string &config_path);
 
-    void set_R_gimbal2world(const Eigen::Quaterniond &q); // 用该帧时间戳的姿态，不用 now()
+    void set_attitude(double yaw, double pitch); // 相机光轴的世界 yaw / pitch，rad
 
     void solve(Armor &armor); // 成功填 xyz 并置 solved，失败保持 false
 

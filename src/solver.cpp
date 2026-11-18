@@ -46,7 +46,11 @@ Solver::Solver(const std::string &config_path)
     t_camera2gimbal_ = Eigen::Vector3d(offset[0], offset[1], offset[2]) / 1000.0;
 }
 
-void Solver::set_R_gimbal2world(const Eigen::Quaterniond &q) { R_gimbal2world_ = q; }
+void Solver::set_attitude(double yaw, double pitch)
+{
+    R_gimbal2world_ = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitY()) *
+                      Eigen::AngleAxisd(-pitch, Eigen::Vector3d::UnitX()); // pitch 正为向下，绕 +x 取负
+}
 
 void Solver::solve(Armor &armor)
 {

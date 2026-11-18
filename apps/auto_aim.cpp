@@ -1,8 +1,6 @@
 // 自动瞄准总链路：时间戳从相机一路传到跟踪，全程不用 now()
 #include <string>
 
-#include <Eigen/Geometry>
-
 #include "aimer.hpp"
 #include "camera.hpp"
 #include "detector.hpp"
@@ -26,8 +24,9 @@ int main(int, char **argv)
     for (;;)
     {
         camera.read(frame); // 图像与曝光中点时刻绑在一起
+        gimbal.read();      // 取最新的姿态与弹速
 
-        solver.set_R_gimbal2world(Eigen::Quaterniond::Identity()); // TODO: 换成 imu.at(frame.timestamp)
+        solver.set_attitude(gimbal.yaw(), gimbal.pitch());
 
         auto armors = detector.detect(frame.img);
         for (auto &armor : armors)

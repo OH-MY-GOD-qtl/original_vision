@@ -41,5 +41,6 @@ lost_hold_ms: 3000.0
 return_deg_per_s: 30.0
 
 # ---- 云台 ----
-bullet_speed: 23.0 # 弹速，m/s
-# TODO 串口设备与波特率
+bullet_speed: 23.0 # 弹速，m/s，回传优先，断线时用这个兜底
+com_port: "/dev/ttyACM0"
+baud_rate: 115200
