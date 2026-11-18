@@ -42,5 +42,5 @@ return_deg_per_s: 30.0
 
 # ---- 云台 ----
 bullet_speed: 23.0 # 弹速，m/s，回传优先，断线时用这个兜底
-com_port: "/dev/ttyACM0"
+com_port: "/dev/ttyACM0" # 留空则不接串口，姿态固定为 0，纯离线调试
 baud_rate: 115200

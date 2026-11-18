@@ -135,6 +135,8 @@ third_party/   海康 MVS SDK
 - 读是**非阻塞**的：每次 `read()` 排空缓冲区并保留最新一帧，不拖视觉循环
 - 收发两个方向的 `yaw` 都指**相机光轴的世界航向**，大小 yaw 的分配由电控负责
 - 前馈四项（vel / acc）目前填 0，等 `Tracker` 上线再补速度项
+- **`com_port` 留空即离线模式**：不打开串口，`read()` 不更新姿态（yaw/pitch 恒为 0）、
+  `send()` 直接丢弃指令。没接电控时也能跑 `detector_test` / `solver_test` / `plot_test`
 
 ## 实时曲线
 

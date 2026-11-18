@@ -95,6 +95,9 @@ Gimbal::Gimbal(const std::string &config_path)
     const YAML::Node yaml = YAML::LoadFile(config_path); // 缺少配置项或类型错误会抛异常
     bullet_speed_ = yaml["bullet_speed"].as<double>();
     const std::string port = yaml["com_port"].as<std::string>();
+    if (port.empty())
+        return; // 留空则不接串口，姿态固定为 0，纯离线调试
+
     const int baud = yaml["baud_rate"].as<int>();
 
     fd_ = ::open(port.c_str(), O_RDWR | O_NOCTTY);
@@ -115,10 +118,17 @@ Gimbal::Gimbal(const std::string &config_path)
     ::tcsetattr(fd_, TCSANOW, &tio);
 }
 
-Gimbal::~Gimbal() { ::close(fd_); }
+Gimbal::~Gimbal()
+{
+    if (fd_ >= 0)
+        ::close(fd_);
+}
 
 void Gimbal::read()
 {
+    if (fd_ < 0)
+        return; // 离线模式，没有串口可读
+
     uint8_t chunk[256];
     const ssize_t n = ::read(fd_, chunk, sizeof chunk);
     if (n > 0)
@@ -154,6 +164,9 @@ void Gimbal::read()
 
 void Gimbal::send(const Command &command)
 {
+    if (fd_ < 0)
+        return; // 离线模式，无处可发
+
     FrameToGimbal frame{};
     frame.head[0] = 'S';
     frame.head[1] = 'P';
