@@ -12,7 +12,7 @@
 | `Detector` | ✅ 已实现 | 图像 → 装甲板像素角点（传统色差法，参数待真机标定） |
 | `Solver` | ✅ 已实现 | 像素角点 → 世界系坐标（IPPE PnP + 手眼变换） |
 | `Tracker` | ✅ 已实现 | 多帧装甲板 → 唯一目标（6 维等速卡尔曼） |
-| `Aimer` | 🟡 部分 | 无目标时停留后缓慢归零；弹道解算未实现 |
+| `Aimer` | ✅ 已实现 | 预瞄点外推 + 重力补偿；开火判定未接 |
 | `Gimbal` | ✅ 已实现 | 指令 ↔ 下位机串口（115200 8N1，CRC16） |
 
 ## 数据流
@@ -46,8 +46,8 @@ cmake --build build -j
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
-./build/tracker_test configs/auto_aim.yaml                 # 跟踪可视化：绿框检测 / 红框预测 / 黄点外推，按 q 退出
-./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Aimer 未实现，目标出现会把云台拉到 0°，勿上机）
+./build/tracker_test configs/auto_aim.yaml                 # 跟踪可视化：亮绿检测 / 深绿滤波 / 红框预瞄，按 q 退出
+./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（开火判定未接，其余已通）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
 ./build/calibration/capture configs/calibration.yaml assets/calib      # 采集棋盘格，s 存图 q 退出
@@ -137,7 +137,7 @@ third_party/   海康 MVS SDK
 - CRC16：查表右移、反射多项式 `0x8408`、初值 `0xFFFF`、无最终异或（`"123456789"` → `0x6F91`）
 - 读是**非阻塞**的：每次 `read()` 排空缓冲区并保留最新一帧，不拖视觉循环
 - 收发两个方向的 `yaw` 都指**相机光轴的世界航向**，大小 yaw 的分配由电控负责
-- 前馈四项（vel / acc）目前填 0，等 `Aimer` 把 `Target.velocity` 接进弹道解算再补
+- 前馈四项（vel / acc）目前填 0；预瞄已经用上 `Target.velocity`，但发出去的角速度前馈还没算
 - **`com_port` 留空即离线模式**：不打开串口，`read()` 不更新姿态（yaw/pitch 恒为 0）、
   `send()` 直接丢弃指令。没接电控时也能跑 `detector_test` / `solver_test` / `plot_test`
 
@@ -166,10 +166,10 @@ third_party/   海康 MVS SDK
 
 ## 配置
 
-`configs/auto_aim.yaml` 是总配置，各段已有 TODO 占位；`configs/camera.yaml` 供相机测试单独使用；
+`configs/auto_aim.yaml` 是总配置，各模块的参数都在里面；`configs/camera.yaml` 供相机测试单独使用；
 `configs/calibration.yaml` 供相机标定使用，相机段之外多一份棋盘格几何。
 
 ## 待办
 
-按顺序补齐：`Aimer`（弹道解算 + 前馈 + 开火）
+按顺序补齐：`Aimer` 的速度前馈（`yaw_vel` / `pitch_vel`）与开火判定
 

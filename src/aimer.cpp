@@ -1,11 +1,14 @@
 #include "aimer.hpp"
 
+#include <cmath>
+
 #include <yaml-cpp/yaml.h>
 
 namespace
 {
 
 constexpr double deg2rad = 3.14159265358979323846 / 180.0;
+constexpr double gravity = 9.8; // 重力加速度，m/s²，方向竖直向下
 
 // 朝 0 走一步，单步不超过 step
 double toward_zero(double value, double step)
@@ -30,7 +33,8 @@ Aimer::Aimer(const std::string &config_path)
 }
 
 Command Aimer::aim(
-    const std::optional<Target> &target, double bullet_speed, std::chrono::steady_clock::time_point t)
+    const std::optional<Target> &target, double bullet_speed,
+    std::chrono::steady_clock::time_point t)
 {
     const double dt = std::chrono::duration<double>(t - last_call_).count();
     last_call_ = t;
@@ -55,9 +59,22 @@ Command Aimer::aim(
     return last_command_;
 }
 
-Command Aimer::solve(const Target &, double, std::chrono::steady_clock::time_point) const
+Command Aimer::solve(
+    const Target &target, double bullet_speed, std::chrono::steady_clock::time_point) const
 {
-    return {}; // TODO: 重力补偿 + 迭代求角，输出 yaw/pitch/distance
+    // 预瞄点越远飞行时间越长，时间越长预瞄点又越远，先粗算一轮再修正
+    const Eigen::Vector3d rough =
+        target.xyz + target.velocity * (target.xyz.norm() / bullet_speed);
+    const double flight = rough.norm() / bullet_speed;
+
+    Eigen::Vector3d aim = target.xyz + target.velocity * flight;
+    aim.y() -= 0.5 * gravity * flight * flight; // 重力下坠，y 朝下所以减 y 等于抬高
+
+    Command command;
+    command.yaw = std::atan2(aim.x(), aim.z());
+    command.pitch = std::atan2(aim.y(), aim.z());
+    command.distance = aim.norm();
+    return command;
 }
 
 } // namespace vision
