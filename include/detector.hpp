@@ -26,7 +26,7 @@ class Detector
     bool is_red_;                  // 敌方颜色
     double color_threshold_;       // 敌方通道减去对方通道的阈值
     double brightness_threshold_;  // 灰度阈值
-    int dilate_size_;              // 膨胀核边长，像素，1 表示不膨胀
+    int morph_size_;              // 形态学核边长，像素，1 表示不处理
     double min_lightbar_ratio_;    // 灯条高/宽 下限
     double min_lightbar_area_;     // 灯条面积下限，像素²
     double min_height_ratio_;      // 两灯条高度 短/长 下限
@@ -34,7 +34,7 @@ class Detector
     double max_center_offset_;     // 中心上下偏移/灯条高 上限
     double min_armor_ratio_;       // 两灯条间距/灯条高 下限
     double max_armor_ratio_;       // 两灯条间距/灯条高 上限
-    cv::Mat kernel_;               // 膨胀核，由 dilate_size 构造
+    cv::Mat kernel_;              // 形态学核，由 morph_size 构造
 };
 
 } // namespace vision
