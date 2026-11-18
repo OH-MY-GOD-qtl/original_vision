@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,9 @@ class Solver
     void set_attitude(double yaw, double pitch); // 相机光轴的世界 yaw / pitch，rad
 
     void solve(Armor &armor); // 成功填 xyz 并置 solved，失败保持 false
+
+    // 世界系 → 像素：把装甲板四角投回图像，姿态按正面朝相机处理，仅供可视化
+    std::array<cv::Point2f, 4> project(const Eigen::Vector3d &xyz) const;
 
   private:
     cv::Mat camera_matrix_;          // 3×3 内参，像素

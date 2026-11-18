@@ -1,5 +1,7 @@
 #include "solver.hpp"
 
+#include <algorithm>
+
 #include <opencv2/calib3d.hpp>
 #include <yaml-cpp/yaml.h>
 
@@ -65,6 +67,27 @@ void Solver::solve(Armor &armor)
     const Eigen::Vector3d p_pitch = R_camera2gimbal_ * p_camera + t_camera2gimbal_; // 相机系 → 俯仰系
     armor.xyz = R_gimbal2world_ * p_pitch; // 俯仰系 → 世界系，云台转动时静止目标坐标不变
     armor.solved = true;
+}
+
+std::array<cv::Point2f, 4> Solver::project(const Eigen::Vector3d &xyz) const
+{
+    // 世界系 → 俯仰系 → 相机系，hand-eye 的逆变换
+    const Eigen::Vector3d p_camera =
+        R_camera2gimbal_.transpose() * (R_gimbal2world_.inverse() * xyz - t_camera2gimbal_);
+
+    std::vector<cv::Point3f> points;
+    for (const auto &p : model_)
+        points.emplace_back(p.x + static_cast<float>(p_camera.x()),
+                            p.y + static_cast<float>(p_camera.y()),
+                            p.z + static_cast<float>(p_camera.z()));
+
+    std::vector<cv::Point2f> pixels;
+    const cv::Vec3d zero(0, 0, 0); // 点已在相机系，旋转和平移都填 0
+    cv::projectPoints(points, zero, zero, camera_matrix_, distort_coeffs_, pixels);
+
+    std::array<cv::Point2f, 4> corners;
+    std::copy(pixels.begin(), pixels.end(), corners.begin());
+    return corners;
 }
 
 } // namespace vision
