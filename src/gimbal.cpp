@@ -158,6 +158,8 @@ void Gimbal::read()
         mode_ = frame.mode;
         yaw_ = frame.yaw;
         pitch_ = frame.pitch;
+        yaw_vel_ = frame.yaw_vel;
+        pitch_vel_ = frame.pitch_vel;
         bullet_speed_ = frame.bullet_speed;
     }
 }

@@ -24,15 +24,19 @@ class Gimbal
     double bullet_speed() const { return bullet_speed_; }
     double yaw() const { return yaw_; }
     double pitch() const { return pitch_; }
+    double yaw_vel() const { return yaw_vel_; }
+    double pitch_vel() const { return pitch_vel_; }
 
   private:
     int fd_ = -1;    // 串口文件描述符
     std::string rx_; // 尚未凑满一帧的残留字节
 
-    uint8_t mode_ = 0;    // 下位机当前模式：0 空闲 1 自瞄 2 小符 3 大符
-    double yaw_ = 0.0;    // 相机光轴的世界偏航角，rad
-    double pitch_ = 0.0;  // 相机光轴的世界俯仰角，rad
-    double bullet_speed_; // 弹速，m/s
+    uint8_t mode_ = 0;        // 下位机当前模式：0 空闲 1 自瞄 2 小符 3 大符
+    double yaw_ = 0.0;        // 相机光轴的世界偏航角，rad
+    double pitch_ = 0.0;      // 相机光轴的世界俯仰角，rad
+    double yaw_vel_ = 0.0;    // 世界偏航角速度，rad/s
+    double pitch_vel_ = 0.0;  // 世界俯仰角速度，rad/s
+    double bullet_speed_;     // 弹速，m/s
 };
 
 } // namespace vision
