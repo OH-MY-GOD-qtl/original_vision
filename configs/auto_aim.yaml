@@ -9,7 +9,7 @@ transport_ms: 0.0
 enemy_color: "blue"         # red 或 blue
 color_threshold: 120        # 敌方通道减去对方通道的阈值
 brightness_threshold: 80    # 灰度阈值
-morph_size: 10              # 闭运算核边长，像素，1 表示不处理
+morph_size: 1               # 闭运算核边长，像素，1 表示不处理
 min_lightbar_ratio: 1.5     # 灯条高/宽 下限
 min_lightbar_area: 50       # 灯条面积下限，像素²
 min_height_ratio: 0.7       # 两灯条高度 短/长 下限
