@@ -46,6 +46,7 @@ cmake --build build -j
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
+./build/tracker_test configs/auto_aim.yaml                 # 跟踪可视化：绿框检测 / 红框预测 / 黄点外推，按 q 退出
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Aimer 未实现，目标出现会把云台拉到 0°，勿上机）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
@@ -156,6 +157,7 @@ third_party/   海康 MVS SDK
 | `solver/solved` | 是否有解算成功的板（0/1），用它判断目标相关字段该段是否有效 |
 | `target/x` `y` `z` `dist` | 目标世界坐标与距离，m |
 | `target/yaw_deg` `pitch_deg` | 目标方向，度 |
+| `predict/dist` | 滤波后的预测距离，与 `target/dist` 对比可看出滤波效果 |
 | `gimbal/yaw_deg` `pitch_deg` | 云台当前姿态，度 |
 | `err/yaw_deg` `pitch_deg` | 目标减云台，度 |
 | `gimbal/bullet_speed` | 回传弹速 |

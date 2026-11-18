@@ -17,6 +17,7 @@
 #include "detector.hpp"
 #include "gimbal.hpp"
 #include "solver.hpp"
+#include "tracker.hpp"
 
 namespace
 {
@@ -34,6 +35,7 @@ int main(int, char *argv[])
     vision::Camera camera(config_path);
     vision::Detector detector(config_path);
     vision::Solver solver(config_path);
+    vision::Tracker tracker(config_path);
     vision::Gimbal gimbal(config_path);
 
     // 每条数据报一个 JSON：{"timestamp": 秒, "data": {键: 值}}
@@ -62,6 +64,8 @@ int main(int, char *argv[])
         for (auto &armor : armors)
             solver.solve(armor);
 
+        const auto tracked = tracker.track(armors, frame.timestamp); // 跟踪的预测位置
+
         const vision::Armor *target = nullptr; // 只可视化第一块解算成功的板
         for (const auto &armor : armors)
         {
@@ -88,22 +92,31 @@ int main(int, char *argv[])
             "\"solver/solved\":%d,"
             "\"target/x\":%.4f,\"target/y\":%.4f,\"target/z\":%.4f,\"target/dist\":%.4f,"
             "\"target/yaw_deg\":%.3f,\"target/pitch_deg\":%.3f,"
+            "\"predict/dist\":%.4f,"
             "\"gimbal/yaw_deg\":%.3f,\"gimbal/pitch_deg\":%.3f,"
             "\"err/yaw_deg\":%.3f,\"err/pitch_deg\":%.3f,"
             "\"gimbal/bullet_speed\":%.2f}}",
             time_s, 1 / dt, armors.size(), target ? 1 : 0, target ? target->xyz.x() : 0.0,
             target ? target->xyz.y() : 0.0, target ? target->xyz.z() : 0.0,
-            target ? target->xyz.norm() : 0.0, target_yaw, target_pitch, gimbal_yaw, gimbal_pitch,
+            target ? target->xyz.norm() : 0.0, target_yaw, target_pitch,
+            tracked ? tracked->xyz.norm() : 0.0, gimbal_yaw, gimbal_pitch,
             target_yaw - gimbal_yaw, target_pitch - gimbal_pitch, gimbal.bullet_speed());
 
         ::sendto(sock, json, std::strlen(json), 0, reinterpret_cast<sockaddr *>(&address),
                  sizeof address);
 
-        for (const auto &armor : armors) // 画面上也标一下，方便对照
+        for (const auto &armor : armors) // 画面上的检测结果
         {
             for (size_t i = 0; i < 4; ++i)
                 cv::line(frame.img, armor.corners[i], armor.corners[(i + 1) % 4],
-                         armor.solved ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 255), 2);
+                         armor.solved ? cv::Scalar(0, 255, 0) : cv::Scalar(128, 128, 128), 2);
+        }
+
+        if (tracked) // 红框 = 跟踪的预测位置
+        {
+            const auto corners = solver.project(tracked->xyz);
+            for (size_t i = 0; i < 4; ++i)
+                cv::line(frame.img, corners[i], corners[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
         }
 
         cv::imshow("plot_test", frame.img);
