@@ -58,6 +58,8 @@ Detector::Detector(const std::string &config_path)
     is_red_ = yaml["enemy_color"].as<std::string>() == "red";
     color_threshold_ = yaml["color_threshold"].as<double>();
     brightness_threshold_ = yaml["brightness_threshold"].as<double>();
+    dilate_size_ = yaml["dilate_size"].as<int>();
+    kernel_ = cv::Mat::ones(dilate_size_, dilate_size_, CV_8U); // 方形核，点阵屏缝隙各向分布
     min_lightbar_ratio_ = yaml["min_lightbar_ratio"].as<double>();
     min_lightbar_area_ = yaml["min_lightbar_area"].as<double>();
     min_height_ratio_ = yaml["min_height_ratio"].as<double>();
@@ -69,7 +71,12 @@ Detector::Detector(const std::string &config_path)
 
 std::vector<Armor> Detector::detect(const cv::Mat &img) const
 {
-    return pair(find_lightbars(lightbar_mask(img)));
+    const cv::Mat mask = lightbar_mask(img);
+
+    cv::Mat thick;
+    cv::dilate(mask, thick, kernel_); // 点阵屏灯条是断开的点，先连成一片
+
+    return pair(find_lightbars(thick));
 }
 
 // 灯条像素：敌方通道够色，且灰度也够亮

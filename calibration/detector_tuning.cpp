@@ -18,6 +18,7 @@ struct Params
     int enemy_red;       // 0 蓝 / 1 红
     int color;           // 敌方通道差值阈值
     int brightness;      // 灰度阈值
+    int dilate_size;     // 膨胀核边长，像素
     int min_area;        // 灯条面积下限，像素²
     int lightbar_ratio;  // 灯条长/宽 下限 ×10
     int height_ratio;    // 两灯条 短/长 下限 ×100
@@ -172,6 +173,7 @@ int main(int, char *argv[])
     params.enemy_red = yaml["enemy_color"].as<std::string>() == "red";
     params.color = static_cast<int>(yaml["color_threshold"].as<double>());
     params.brightness = static_cast<int>(yaml["brightness_threshold"].as<double>());
+    params.dilate_size = yaml["dilate_size"].as<int>();
     params.min_area = static_cast<int>(yaml["min_lightbar_area"].as<double>());
     params.lightbar_ratio = static_cast<int>(yaml["min_lightbar_ratio"].as<double>() * 10);
     params.height_ratio = static_cast<int>(yaml["min_height_ratio"].as<double>() * 100);
@@ -189,6 +191,7 @@ int main(int, char *argv[])
         {"enemy_red 0blue 1red", &params.enemy_red, 1},
         {"color_threshold", &params.color, 255},
         {"brightness_threshold", &params.brightness, 255},
+        {"dilate_size", &params.dilate_size, 21},
         {"min_lightbar_area", &params.min_area, 2000},
         {"min_lightbar_ratio x10", &params.lightbar_ratio, 50},
         {"min_height_ratio x100", &params.height_ratio, 100},
@@ -212,12 +215,14 @@ int main(int, char *argv[])
         pull_sliders(view_win, sliders);
 
         const cv::Mat mask = lightbar_mask(frame.img);
-        const std::vector<cv::RotatedRect> bars = find_lightbars(mask);
+        cv::Mat thick;
+        cv::dilate(mask, thick, cv::Mat::ones(params.dilate_size, params.dilate_size, CV_8U)); // 点阵屏缝隙
+        const std::vector<cv::RotatedRect> bars = find_lightbars(thick);
         const std::vector<std::pair<size_t, size_t>> pairs = find_pairs(bars);
 
         draw(frame.img, bars, pairs); // read() 每帧重新转码，直接画在 frame.img 上
         cv::imshow(view_win, frame.img);
-        cv::imshow(mask_win, mask);
+        cv::imshow(mask_win, thick); // 显示膨胀后的图，就是进 findContours 的那张
 
         if (++tick % 30 == 0) // 每 30 帧打一次，别刷屏
             std::printf("灯条 %zu  装甲板 %zu  mask 像素 %d\n", bars.size(), pairs.size(),
@@ -228,6 +233,7 @@ int main(int, char *argv[])
     std::printf("enemy_color: \"%s\"\n", params.enemy_red ? "red" : "blue");
     std::printf("color_threshold: %d\n", params.color);
     std::printf("brightness_threshold: %d\n", params.brightness);
+    std::printf("dilate_size: %d\n", params.dilate_size);
     std::printf("min_lightbar_area: %d\n", params.min_area);
     std::printf("min_lightbar_ratio: %.1f\n", params.lightbar_ratio / 10.0);
     std::printf("min_height_ratio: %.2f\n", params.height_ratio / 100.0);

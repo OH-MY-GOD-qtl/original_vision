@@ -105,6 +105,7 @@ third_party/   海康 MVS SDK
 跑 `detector_tuning`：左侧窗口原图叠加绿框灯条与红线配对，右侧窗口是灯条二值图，
 滑动条实时调全部检测参数，ESC 退出时打印可直接粘贴回 `auto_aim.yaml` 的配置。
 
+像素判定：敌方色差 + 灰度亮度 → 二值图，再按 `dilate_size` 膨胀一次，把点阵屏灯条的断点连成一片。
 灯条判定两层：`min_lightbar_area` 滤面积过小的碎点，`min_lightbar_ratio` 滤不够细长的。
 配对再过四关：高度相近、倾角一致、中心对齐、间距像装甲板（倾角差阈值 `max_tilt_diff_deg`）。
 
