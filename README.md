@@ -46,7 +46,8 @@ cmake --build build -j
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
-./build/tracker_test configs/auto_aim.yaml                 # 跟踪可视化：亮绿检测 / 深绿滤波 / 红框预瞄，按 q 退出
+./build/tracker_test configs/auto_aim.yaml                # 跟踪可视化：亮绿检测 / 深绿滤波 / 红框预瞄，按 q 退出
+./build/auto_aim_test configs/auto_aim.yaml                # 全链路：画面 + 推 PlotJuggler，红框为瞄准框，不发指令
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（开火判定未接，其余已通）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
@@ -167,6 +168,19 @@ third_party/   海康 MVS SDK
 | `gimbal/bullet_speed` | 回传弹速 |
 
 没有解算结果时，目标相关字段填 0。
+
+`auto_aim_test` 推同一个端口，键名多一组 `tx/`——**即将发给云台的帧内容**：
+
+| 键 | 含义 |
+|---|---|
+| `tx/mode` / `tx/shoot` / `tx/is_empty` | 帧里的模式位与标志位 |
+| `tx/yaw_deg` `tx/pitch_deg` `tx/dist` | 目标绝对角与距离 |
+| `tx/yaw_vel_deg` `tx/yaw_acc_deg` `tx/pitch_vel_deg` `tx/pitch_acc_deg` | 前馈项，度制，目前恒 0 |
+
+串口上下行都是弧度，**推出去的所有角量都折成度**：带 `_deg` 的是度，角速度是度/秒，
+角加速度是度/秒²。
+
+`err/*` 是 `tx` 减 `gimbal`，也就是云台还差多少。两个工具共用 9870 端口，不要同时开。
 
 ## 配置
 
