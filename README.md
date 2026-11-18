@@ -81,11 +81,14 @@ third_party/   海康 MVS SDK
 云台系取 $x$ 右、$y$ 下、$z$ 前，与相机系同构，机械对准时手眼矩阵就是单位阵。
 
 - `yaw = atan2(x, z)`，正为向右
-- `pitch = atan2(y, z)`，正为向下
+- `pitch = asin(y / ‖p‖)`，正为向下，也就是云台的仰角（不是 `atan2(y, z)`）
 - 装甲板模型点取灯条中轴线四端点：$(\pm 65, \pm 27.5, 0)$ mm，顺序左上→右上→右下→左下
 
 `Armor::xyz` 与 `Target` 存**世界系**坐标，由 $R_{gimbal\to world} = R_y(\text{yaw})\,R_x(-\text{pitch})$ 变换得到，
 云台转动时静止目标的坐标不变。
+
+这两个角是该复合旋转的欧拉角，前进轴为 $(\sin\psi\cos\theta,\ \sin\theta,\ \cos\psi\cos\theta)$，
+所以 `pitch` 是仰角——用 `atan2(y, z)` 算会在 yaw 变大时偏小，6m 处 yaw 45°、仰角 10° 能差 420mm。
 
 这套符号下全链路没有取负：目标在图像中心偏右对应 yaw 正，偏下对应 pitch 正。
 

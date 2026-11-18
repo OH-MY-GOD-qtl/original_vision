@@ -39,7 +39,7 @@ int main(int, char *argv[])
             const cv::Point2f center =
                 (armor.corners[0] + armor.corners[1] + armor.corners[2] + armor.corners[3]) * 0.25f;
             const double yaw = std::atan2(armor.xyz.x(), armor.xyz.z()) * 180 / CV_PI;
-            const double pitch = std::atan2(armor.xyz.y(), armor.xyz.z()) * 180 / CV_PI;
+            const double pitch = std::asin(armor.xyz.y() / armor.xyz.norm()) * 180 / CV_PI;
 
             cv::circle(frame.img, center, 4, cv::Scalar(0, 0, 255), -1);
             cv::putText(frame.img, cv::format("%.2fm y%.1f p%.1f", armor.xyz.norm(), yaw, pitch),

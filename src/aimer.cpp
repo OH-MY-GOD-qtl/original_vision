@@ -72,7 +72,7 @@ Command Aimer::solve(
 
     Command command;
     command.yaw = std::atan2(aim.x(), aim.z());
-    command.pitch = std::atan2(aim.y(), aim.z());
+    command.pitch = std::asin(aim.y() / aim.norm()); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
     command.distance = aim.norm();
     return command;
 }

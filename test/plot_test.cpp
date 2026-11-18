@@ -22,9 +22,9 @@
 namespace
 {
 
-// 世界系坐标 → 角度（度）
+// 世界系坐标 → 角度（度），pitch 取仰角
 double yaw_deg(const Eigen::Vector3d &p) { return std::atan2(p.x(), p.z()) * 180 / CV_PI; }
-double pitch_deg(const Eigen::Vector3d &p) { return std::atan2(p.y(), p.z()) * 180 / CV_PI; }
+double pitch_deg(const Eigen::Vector3d &p) { return std::asin(p.y() / p.norm()) * 180 / CV_PI; }
 
 } // namespace
 
