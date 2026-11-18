@@ -45,6 +45,7 @@ cmake --build build -j
 ./build/camera_test configs/camera.yaml                   # 相机取流并显示，按 q 退出
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
+./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Tracker 未实现，静默空转）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
@@ -134,6 +135,28 @@ third_party/   海康 MVS SDK
 - 读是**非阻塞**的：每次 `read()` 排空缓冲区并保留最新一帧，不拖视觉循环
 - 收发两个方向的 `yaw` 都指**相机光轴的世界航向**，大小 yaw 的分配由电控负责
 - 前馈四项（vel / acc）目前填 0，等 `Tracker` 上线再补速度项
+
+## 实时曲线
+
+`plot_test` 把整条链路的量用 UDP JSON 推到 PlotJuggler，**只收不发，不会指挥云台**。
+
+1. PlotJuggler 里选 **Streaming → UDP Server**，端口填 `9870`，格式选 **JSON**，点开始
+2. 另开终端跑 `./build/plot_test configs/auto_aim.yaml`
+
+键名里的 `/` 会被 PlotJuggler 自动分组：
+
+| 键 | 含义 |
+|---|---|
+| `loop/fps` | 主循环帧率 |
+| `detector/armors` | 检测到的装甲板数 |
+| `solver/solved` | 是否有解算成功的板（0/1），用它判断目标相关字段该段是否有效 |
+| `target/x` `y` `z` `dist` | 目标世界坐标与距离，m |
+| `target/yaw_deg` `pitch_deg` | 目标方向，度 |
+| `gimbal/yaw_deg` `pitch_deg` | 云台当前姿态，度 |
+| `err/yaw_deg` `pitch_deg` | 目标减云台，度 |
+| `gimbal/bullet_speed` | 回传弹速 |
+
+没有解算结果时，目标相关字段填 0。
 
 ## 配置
 

@@ -47,5 +47,9 @@ add_executable(solver_test test/solver_test.cpp)
 target_link_libraries(solver_test PRIVATE camera detector solver)
 set_target_properties(solver_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
 
+add_executable(plot_test test/plot_test.cpp)
+target_link_libraries(plot_test PRIVATE camera detector solver gimbal)
+set_target_properties(plot_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
+
 add_subdirectory(calibration)
 add_subdirectory(apps)
