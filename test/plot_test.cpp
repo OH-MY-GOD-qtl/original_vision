@@ -80,10 +80,12 @@ int main(int, char *argv[])
         const double target_pitch = target ? pitch_deg(target->xyz) : 0.0;
         const double gimbal_yaw = gimbal.yaw() * 180 / CV_PI;
         const double gimbal_pitch = gimbal.pitch() * 180 / CV_PI;
+        const double gimbal_yaw_vel = gimbal.yaw_vel() * 180 / CV_PI;
+        const double gimbal_pitch_vel = gimbal.pitch_vel() * 180 / CV_PI;
         const double time_s =
             std::chrono::duration<double>(frame.timestamp.time_since_epoch()).count();
 
-        char json[640];
+        char json[1024];
         std::snprintf(
             json, sizeof json,
             "{\"timestamp\":%.6f,\"data\":{"
@@ -94,13 +96,15 @@ int main(int, char *argv[])
             "\"target/yaw_deg\":%.3f,\"target/pitch_deg\":%.3f,"
             "\"predict/dist\":%.4f,"
             "\"gimbal/yaw_deg\":%.3f,\"gimbal/pitch_deg\":%.3f,"
+            "\"gimbal/yaw_vel_deg\":%.3f,\"gimbal/pitch_vel_deg\":%.3f,"
             "\"err/yaw_deg\":%.3f,\"err/pitch_deg\":%.3f,"
             "\"gimbal/bullet_speed\":%.2f}}",
             time_s, 1 / dt, armors.size(), target ? 1 : 0, target ? target->xyz.x() : 0.0,
             target ? target->xyz.y() : 0.0, target ? target->xyz.z() : 0.0,
             target ? target->xyz.norm() : 0.0, target_yaw, target_pitch,
-            tracked ? tracked->xyz.norm() : 0.0, gimbal_yaw, gimbal_pitch,
-            target_yaw - gimbal_yaw, target_pitch - gimbal_pitch, gimbal.bullet_speed());
+            tracked ? tracked->xyz.norm() : 0.0, gimbal_yaw, gimbal_pitch, gimbal_yaw_vel,
+            gimbal_pitch_vel, target_yaw - gimbal_yaw, target_pitch - gimbal_pitch,
+            gimbal.bullet_speed());
 
         ::sendto(sock, json, std::strlen(json), 0, reinterpret_cast<sockaddr *>(&address),
                  sizeof address);

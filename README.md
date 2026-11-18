@@ -162,6 +162,7 @@ third_party/   海康 MVS SDK
 | `target/yaw_deg` `pitch_deg` | 目标方向，度 |
 | `predict/dist` | 滤波后的预测距离，与 `target/dist` 对比可看出滤波效果 |
 | `gimbal/yaw_deg` `pitch_deg` | 云台当前姿态，度 |
+| `gimbal/yaw_vel_deg` `pitch_vel_deg` | 云台回传的角速度，度/秒 |
 | `err/yaw_deg` `pitch_deg` | 目标减云台，度 |
 | `gimbal/bullet_speed` | 回传弹速 |
 
