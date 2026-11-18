@@ -1,6 +1,6 @@
 # 鼎行·双创战队 自瞄骨架
 
-机器人视觉自瞄的工程骨架：相机、检测、解算、串口已实现，剩下跟踪与瞄准。
+机器人视觉自瞄的工程骨架：相机、检测、解算、跟踪、串口已实现，剩下瞄准。
 
 链路、接口、配置、构建都已就位，按模块逐个填入实现即可。
 
@@ -11,7 +11,7 @@
 | `Camera` | ✅ 已实现 | 海康相机取流，输出图像 + 曝光中点时刻 |
 | `Detector` | ✅ 已实现 | 图像 → 装甲板像素角点（传统色差法，参数待真机标定） |
 | `Solver` | ✅ 已实现 | 像素角点 → 世界系坐标（IPPE PnP + 手眼变换） |
-| `Tracker` | ⬜ 空 | 多帧装甲板 → 唯一目标（滤波预测） |
+| `Tracker` | ✅ 已实现 | 多帧装甲板 → 唯一目标（6 维等速卡尔曼） |
 | `Aimer` | 🟡 部分 | 无目标时停留后缓慢归零；弹道解算未实现 |
 | `Gimbal` | ✅ 已实现 | 指令 ↔ 下位机串口（115200 8N1，CRC16） |
 
@@ -46,7 +46,7 @@ cmake --build build -j
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
-./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Tracker 未实现，静默空转）
+./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（Aimer 未实现，目标出现会把云台拉到 0°，勿上机）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
 ./build/calibration/capture configs/calibration.yaml assets/calib      # 采集棋盘格，s 存图 q 退出
@@ -136,7 +136,7 @@ third_party/   海康 MVS SDK
 - CRC16：查表右移、反射多项式 `0x8408`、初值 `0xFFFF`、无最终异或（`"123456789"` → `0x6F91`）
 - 读是**非阻塞**的：每次 `read()` 排空缓冲区并保留最新一帧，不拖视觉循环
 - 收发两个方向的 `yaw` 都指**相机光轴的世界航向**，大小 yaw 的分配由电控负责
-- 前馈四项（vel / acc）目前填 0，等 `Tracker` 上线再补速度项
+- 前馈四项（vel / acc）目前填 0，等 `Aimer` 把 `Target.velocity` 接进弹道解算再补
 - **`com_port` 留空即离线模式**：不打开串口，`read()` 不更新姿态（yaw/pitch 恒为 0）、
   `send()` 直接丢弃指令。没接电控时也能跑 `detector_test` / `solver_test` / `plot_test`
 
@@ -169,5 +169,5 @@ third_party/   海康 MVS SDK
 
 ## 待办
 
-按顺序补齐：`Tracker` → `Aimer`（弹道解算 + 前馈）
+按顺序补齐：`Aimer`（弹道解算 + 前馈 + 开火）
 

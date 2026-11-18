@@ -34,7 +34,9 @@ handeye_roll_deg: 0.0
 handeye_offset_mm: [-54.12, 8.00, 157.00]
 
 # ---- 跟踪 ----
-# TODO 过程噪声、观测噪声、最大丢失帧数
+track_process_noise: 300.0 # 过程噪声谱密度，越大越信观测、越跟得上机动
+track_measure_noise: 0.01  # 观测噪声方差，m²（0.01 约等于 10cm 标准差）
+track_max_lost: 20         # 连续丢失多少帧后放弃，165fps 下约 120ms
 
 # ---- 瞄准 ----
 # 丢失目标后原位停留 lost_hold_ms，再按 return_deg_per_s 缓慢归零
