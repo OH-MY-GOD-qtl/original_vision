@@ -37,8 +37,7 @@ int main(int, char *argv[])
                 cv::line(frame.img, armor.corners[i], armor.corners[(i + 1) % 4],
                          cv::Scalar(0, 255, 0), 2);
 
-            const cv::Point2f center =
-                (armor.corners[0] + armor.corners[1] + armor.corners[2] + armor.corners[3]) * 0.25f;
+            const cv::Point2f center = vision::center_of(armor.corners);
             const Eigen::Vector2d angles = vision::angles_of(armor.xyz);
             const double yaw = angles.x() * 180 / CV_PI;
             const double pitch = angles.y() * 180 / CV_PI;
@@ -47,7 +46,7 @@ int main(int, char *argv[])
             // 洋红线：板面法线，指向相机方向；它和装甲板方位一致说明角度解算对
             const Eigen::Vector3d normal(std::sin(armor.yaw), 0.0, std::cos(armor.yaw));
             const auto tail = solver.project(armor.xyz + 0.15 * normal);
-            const cv::Point2f tip = (tail[0] + tail[1] + tail[2] + tail[3]) * 0.25f;
+            const cv::Point2f tip = vision::center_of(tail);
             cv::line(frame.img, center, tip, cv::Scalar(255, 0, 255), 2);
 
             cv::circle(frame.img, center, 4, cv::Scalar(0, 255, 0), -1);

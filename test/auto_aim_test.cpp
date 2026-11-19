@@ -26,11 +26,6 @@ namespace
 
 constexpr double rad2deg = 180.0 / CV_PI; // 串口上下行都是弧度，只有上屏才转度
 
-cv::Point2f center_of(const std::array<cv::Point2f, 4> &corners)
-{
-    return (corners[0] + corners[1] + corners[2] + corners[3]) * 0.25f;
-}
-
 void draw(cv::Mat &img, const std::array<cv::Point2f, 4> &corners, const cv::Scalar &color)
 {
     for (size_t i = 0; i < 4; ++i)
@@ -149,7 +144,7 @@ int main(int, char *argv[])
             solver.project(vision::direction_of(command.yaw, command.pitch) * distance);
         draw(frame.img, aim, cv::Scalar(0, 0, 255)); // 红框：击打位置
 
-        const auto at = center_of(aim);
+        const auto at = vision::center_of(aim);
         const cv::Scalar cyan(255, 255, 0);
         const cv::Scalar red(0, 0, 255);
         cv::circle(frame.img, at, 10, red, 2); // 红圈红叉：击打点

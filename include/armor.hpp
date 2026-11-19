@@ -17,4 +17,10 @@ struct Armor
     bool solved = false;                           // Solver 解算成功才置 true
 };
 
+// 四角点求中心，像素角点和投影结果都走它
+inline cv::Point2f center_of(const std::array<cv::Point2f, 4> &corners)
+{
+    return (corners[0] + corners[1] + corners[2] + corners[3]) * 0.25f;
+}
+
 } // namespace vision

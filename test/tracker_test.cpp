@@ -58,12 +58,12 @@ int main(int, char *argv[])
                 const Eigen::Vector3d p = tracked->center + tracked->radius * Eigen::Vector3d(
                                                                 std::sin(a), 0, std::cos(a));
                 const auto corner = solver.project(p);
-                const cv::Point2f point = (corner[0] + corner[1] + corner[2] + corner[3]) * 0.25f;
+                const cv::Point2f point = vision::center_of(corner);
                 ring.emplace_back(cvRound(point.x), cvRound(point.y));
             }
             cv::polylines(frame.img, ring, false, cv::Scalar(255, 128, 0), 1);
             const auto middle = solver.project(tracked->center);
-            const cv::Point2f center = (middle[0] + middle[1] + middle[2] + middle[3]) * 0.25f;
+            const cv::Point2f center = vision::center_of(middle);
             cv::circle(frame.img, center, 3, cv::Scalar(255, 255, 255), -1);
 
             const auto now = solver.project(tracked->armor(0.0)); // 深绿：滤波后的当前位置
@@ -79,7 +79,7 @@ int main(int, char *argv[])
             for (size_t i = 0; i < 4; ++i) // 红：击打位置
                 cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
 
-            const cv::Point2f ahead = (future[0] + future[1] + future[2] + future[3]) * 0.25f;
+            const cv::Point2f ahead = vision::center_of(future);
             cv::circle(frame.img, ahead, 4, cv::Scalar(0, 0, 255), -1); // 红点：击打点
 
             cv::putText(
