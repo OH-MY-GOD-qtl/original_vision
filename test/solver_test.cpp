@@ -40,10 +40,19 @@ int main(int, char *argv[])
                 (armor.corners[0] + armor.corners[1] + armor.corners[2] + armor.corners[3]) * 0.25f;
             const double yaw = std::atan2(armor.xyz.x(), armor.xyz.z()) * 180 / CV_PI;
             const double pitch = std::asin(armor.xyz.y() / armor.xyz.norm()) * 180 / CV_PI;
+            const double board = armor.yaw * 180 / CV_PI;
+
+            // 洋红线：板面法线，指向相机方向；它和装甲板方位一致说明角度解算对
+            const Eigen::Vector3d normal(std::sin(armor.yaw), 0.0, std::cos(armor.yaw));
+            const auto tail = solver.project(armor.xyz + 0.15 * normal);
+            const cv::Point2f tip = (tail[0] + tail[1] + tail[2] + tail[3]) * 0.25f;
+            cv::line(frame.img, center, tip, cv::Scalar(255, 0, 255), 2);
 
             cv::circle(frame.img, center, 4, cv::Scalar(0, 0, 255), -1);
-            cv::putText(frame.img, cv::format("%.2fm y%.1f p%.1f", armor.xyz.norm(), yaw, pitch),
-                        center, cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 255, 255), 2);
+            const std::string text = cv::format("%.2fm yaw%.1f pitch%.1f board%.1f",
+                                                armor.xyz.norm(), yaw, pitch, board);
+            cv::putText(frame.img, text, center, cv::FONT_HERSHEY_SIMPLEX, 0.8,
+                        cv::Scalar(0, 255, 255), 2);
         }
 
         cv::imshow("solver_test", frame.img);

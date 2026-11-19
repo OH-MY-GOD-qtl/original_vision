@@ -1,6 +1,7 @@
 #include "solver.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 #include <opencv2/calib3d.hpp>
 #include <yaml-cpp/yaml.h>
@@ -66,6 +67,15 @@ void Solver::solve(Armor &armor)
     const Eigen::Vector3d p_camera(tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2));
     const Eigen::Vector3d p_pitch = R_camera2gimbal_ * p_camera + t_camera2gimbal_; // 相机系 → 俯仰系
     armor.xyz = R_gimbal2world_ * p_pitch; // 俯仰系 → 世界系，云台转动时静止目标坐标不变
+
+    // 板面法线：模型 +z 指向板内，取负才是朝外；转到世界系后取偏航角
+    cv::Mat rotation;
+    cv::Rodrigues(rvec, rotation);
+    const Eigen::Vector3d n_camera(-rotation.at<double>(0, 2), -rotation.at<double>(1, 2),
+                                   -rotation.at<double>(2, 2));
+    const Eigen::Vector3d n_world = R_gimbal2world_ * (R_camera2gimbal_ * n_camera);
+    armor.yaw = std::atan2(n_world.x(), n_world.z());
+
     armor.solved = true;
 }
 
