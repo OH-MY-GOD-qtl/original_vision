@@ -35,6 +35,7 @@ handeye_offset_mm: [-54.12, 8.00, 157.00]
 
 # ---- 跟踪 ----
 armor_radius: 250.0         # 装甲板到旋转中心的水平距离，mm，板子尺寸固定所以写死
+armor_count: 4              # 装甲板数量，相邻两块间隔 360/armor_count 度
 track_process_noise: 100.0  # 圆心过程噪声谱密度，越大越信观测、越跟得上机动
 track_measure_noise: 0.01   # 位置观测噪声方差，m²（0.01 约等于 10cm 标准差）
 track_yaw_noise: 0.01       # 板面角度观测噪声方差，rad²（0.01 约等于 5.7°）

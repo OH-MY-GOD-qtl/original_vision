@@ -11,9 +11,9 @@
 namespace vision
 {
 
-// 解算：像素角点 + 云台姿态 → 世界系坐标
+// 解算：像素角点 + 云台姿态 → 世界系坐标 + 板面朝向
 // 云台系：x 右、y 下、z 前（右手系，与相机系同构，对准时手眼为单位阵）
-// 角度：yaw = atan2(x, z) 正为向右；pitch = atan2(y, z) 正为向下
+// 角度：yaw = atan2(x, z) 正为向右；pitch = asin(y / |p|) 正为向下，即仰角
 // 方向向量 = (sin yaw·cos pitch, sin pitch, cos yaw·cos pitch)
 class Solver
 {
@@ -22,7 +22,7 @@ class Solver
 
     void set_attitude(double yaw, double pitch); // 相机光轴的世界 yaw / pitch，rad
 
-    void solve(Armor &armor); // 成功填 xyz 并置 solved，失败保持 false
+    void solve(Armor &armor); // 成功填 xyz 与板面 yaw 并置 solved，失败保持 false
 
     // 世界系 → 像素：把装甲板四角投回图像，姿态按正面朝相机处理，仅供可视化
     std::array<cv::Point2f, 4> project(const Eigen::Vector3d &xyz) const;

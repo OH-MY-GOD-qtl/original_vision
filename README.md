@@ -47,7 +47,7 @@ cmake --build build -j
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
 ./build/tracker_test configs/auto_aim.yaml                # 跟踪可视化：亮绿检测 / 深绿滤波 / 红框预瞄，按 q 退出
-./build/auto_aim_test configs/auto_aim.yaml                # 全链路：画面 + 推 PlotJuggler，红框为瞄准框，不发指令
+./build/auto_aim_test configs/auto_aim.yaml               # 全链路：画面 + 推 PlotJuggler，红框为瞄准框，不发指令
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（开火判定未接，其余已通）
 ./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
@@ -102,7 +102,7 @@ third_party/   海康 MVS SDK
 - 状态 8 维：`[cx cy cz vx vy vz theta omega]`，`theta` 是装甲板在圆上的方位，也是板面朝向
 - 半径取配置里的 `armor_radius`，板子尺寸固定所以写死，不参与估计
 - 观测 4 维：装甲板世界坐标（3）+ 板面角度（1），角度对位置有耦合，雅可比里 `∂h/∂theta = r`
-- 换板：4 块板间隔 90°，看到另一块时位置和角度一起跳，转角先对齐再滤波，转速不受影响
+- 换板：相邻两块夹角 `360 / armor_count`，看到另一块时位置和角度一起跳，转角先对齐再滤波，转速不受影响
 
 预瞄不再按直线外推，而是让转角走 `theta + omega * t`，所以目标自转时预瞄点也在圆上跑：
 
@@ -179,7 +179,7 @@ target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(
 | `target/x` `y` `z` `dist` | 目标世界坐标与距离，m |
 | `target/yaw_deg` `pitch_deg` | 目标方向，度 |
 | `predict/dist` | 滤波后的距离，与 `target/dist` 对比可看出滤波效果 |
-| `predict/theta_deg` | 装甲板在圆上的方位角，换板时会跳 90° |
+| `predict/theta_deg` | 装甲板在圆上的方位角，换板时会跳 `360 / armor_count` |
 | `predict/omega_deg` | 估计的转速，度/秒 |
 | `gimbal/yaw_deg` `pitch_deg` | 云台当前姿态，度 |
 | `gimbal/yaw_vel_deg` `pitch_vel_deg` | 云台回传的角速度，度/秒 |

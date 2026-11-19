@@ -26,10 +26,9 @@ class Tracker
     using State = Eigen::Matrix<double, 8, 1>; // [cx cy cz vx vy vz theta omega]
     using Covariance = Eigen::Matrix<double, 8, 8>;
 
-    void predict(double dt);                            // 圆心等速、转角随角速度外推
-    void update(const Armor &armor);                    // 用位置和板面角度修正
-    Eigen::Vector3d armor_of(const State &state) const; // 状态对应的装甲板位置
-    Target current() const;                             // 状态转成对外结果
+    void predict(double dt);            // 圆心等速、转角随角速度外推
+    void update(const Armor &armor);    // 用位置和板面角度修正
+    Target current() const;             // 状态转成对外结果
 
     State x_ = State::Zero();
     Covariance P_ = Covariance::Identity();
@@ -43,6 +42,7 @@ class Tracker
     double yaw_noise_;      // 板面角度观测噪声方差，rad²
     double rotation_noise_; // 角速度谱密度，越大越跟得上急转
     double radius_;         // 装甲板到中心的水平距离，m，固定值
+    int armor_count_;       // 装甲板数量，相邻两块间隔 360°/armor_count
     int max_lost_;          // 连续丢失多少帧后放弃
 };
 

@@ -16,13 +16,8 @@ Tracker::Tracker(const std::string &config_path)
     yaw_noise_ = yaml["track_yaw_noise"].as<double>();
     rotation_noise_ = yaml["track_rotation_noise"].as<double>();
     radius_ = yaml["armor_radius"].as<double>() / 1000.0; // 配置写 mm，算的时候用 m
+    armor_count_ = yaml["armor_count"].as<int>();
     max_lost_ = yaml["track_max_lost"].as<int>();
-}
-
-Eigen::Vector3d Tracker::armor_of(const State &state) const
-{
-    const double theta = state(6);
-    return state.head<3>() + radius_ * Eigen::Vector3d(std::sin(theta), 0.0, std::cos(theta));
 }
 
 Target Tracker::current() const
@@ -53,9 +48,8 @@ std::optional<Target> Tracker::track(
             return std::nullopt;
 
         x_.setZero();
-        x_(6) = first->yaw; // 板面角度直接给出装甲板在圆上的方位
-        x_.head<3>() =
-            first->xyz - radius_ * Eigen::Vector3d(std::sin(x_(6)), 0.0, std::cos(x_(6)));
+        x_(6) = first->yaw;                                // 板面角度直接给出装甲板在圆上的方位
+        x_.head<3>() = first->xyz - current().armor(0.0); // 圆心在板子身后一个半径
         P_.setZero();
         P_.diagonal() << 1, 1, 1, 100, 100, 100, 0.1, 25; // 速度、转速都先不信
         last_ = t;
@@ -68,7 +62,7 @@ std::optional<Target> Tracker::track(
     predict(std::chrono::duration<double>(t - last_).count());
     last_ = t;
 
-    const Eigen::Vector3d predicted = armor_of(x_); // 预测的那块板在哪
+    const Eigen::Vector3d predicted = current().armor(0.0); // 预测的那块板在哪
     const Armor *nearest = nullptr;
     double nearest_sq = 0;
     for (const auto &armor : armors)
@@ -126,10 +120,10 @@ void Tracker::update(const Armor &armor)
 {
     // 板面角度是 atan2 出来的，落在 ±π；状态里的转角一直在累加，先折到同一分支
     double diff = std::remainder(armor.yaw - x_(6), 2 * CV_PI);
-    if (std::abs(diff) > CV_PI / 4)
+    if (std::abs(diff) > CV_PI / armor_count_)
     {
-        x_(6) += diff;  // 换板：4 块板间隔 90°，转角直接对齐新板，转速不受影响
-        diff = 0.0;     // 这一帧已经对齐，不再用它修正转角
+        x_(6) += diff; // 换板：转角直接对齐新板，转速不受影响
+        diff = 0.0;    // 这一帧已经对齐，不再用它修正转角
     }
     const double yaw = x_(6) + diff;
 
@@ -151,7 +145,7 @@ void Tracker::update(const Armor &armor)
     z << armor.xyz, yaw;
 
     Eigen::Vector4d h;
-    h << armor_of(x_), x_(6);
+    h << current().armor(0.0), x_(6);
 
     const Eigen::Matrix4d S = H * P_ * H.transpose() + R;
     const Eigen::Matrix<double, 8, 4> K = P_ * H.transpose() * S.inverse();
