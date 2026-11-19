@@ -4,5 +4,6 @@
     "C_Cpp.default.cppStandard": "c++17",
     "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
     "C_Cpp.errorSquiggles": "enabled",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "cmake.cmakePath": "/usr/bin/cmake"
 }
