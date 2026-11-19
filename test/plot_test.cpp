@@ -113,7 +113,7 @@ int main(int, char *argv[])
                          armor.solved ? cv::Scalar(0, 255, 0) : cv::Scalar(128, 128, 128), 2);
         }
 
-        if (tracked) // 红框 = 跟踪的预测位置
+        if (tracked)
         {
             const auto corners = solver.project(tracked->armor(0.0));
             for (size_t i = 0; i < 4; ++i) // 深绿：滤波后的当前位置
