@@ -1,4 +1,4 @@
-// 真机解算测试：需要 MV-CS016-10UC 在场，按 q 退出
+// 真机解算测试：绿框为解算成功的装甲板，洋红线为板面法线，按 q 退出
 #include <cmath>
 #include <string>
 
@@ -48,7 +48,7 @@ int main(int, char *argv[])
             const cv::Point2f tip = (tail[0] + tail[1] + tail[2] + tail[3]) * 0.25f;
             cv::line(frame.img, center, tip, cv::Scalar(255, 0, 255), 2);
 
-            cv::circle(frame.img, center, 4, cv::Scalar(0, 0, 255), -1);
+            cv::circle(frame.img, center, 4, cv::Scalar(0, 255, 0), -1);
             const std::string text = cv::format("%.2fm yaw%.1f pitch%.1f board%.1f",
                                                 armor.xyz.norm(), yaw, pitch, board);
             cv::putText(frame.img, text, center, cv::FONT_HERSHEY_SIMPLEX, 0.8,

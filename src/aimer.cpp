@@ -33,11 +33,19 @@ Aimer::Aimer(const std::string &config_path)
 }
 
 Command Aimer::aim(
-    const std::optional<Target> &target, double bullet_speed,
-    std::chrono::steady_clock::time_point t)
+    const std::optional<Target> &target, double bullet_speed, double gimbal_yaw,
+    double gimbal_pitch, std::chrono::steady_clock::time_point t)
 {
     const double dt = std::chrono::duration<double>(t - last_call_).count();
     last_call_ = t;
+
+    if (!started_) // 首帧把云台当前姿态当作原位，否则会直接下发 0,0 把云台拽走
+    {
+        last_command_.yaw = gimbal_yaw;
+        last_command_.pitch = gimbal_pitch;
+        last_target_ = t;
+        started_ = true;
+    }
 
     if (target)
     {

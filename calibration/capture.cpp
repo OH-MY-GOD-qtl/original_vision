@@ -1,4 +1,5 @@
 // 标定：采集棋盘格图像，识别到才允许存，按 s 存图，按 q 退出
+// 用法：./build/calibration/capture configs/auto_aim.yaml configs/calibration.yaml assets/calib
 #include <cstdio>
 #include <filesystem>
 #include <string>
@@ -13,10 +14,11 @@
 
 int main(int, char *argv[])
 {
-    const std::string config_path = argv[1];
-    const std::string folder = argv[2];
+    const std::string config_path = argv[1]; // 相机参数，和总链路共用同一份
+    const std::string board_path = argv[2];  // 只要棋盘格几何
+    const std::string folder = argv[3];
 
-    const YAML::Node yaml = YAML::LoadFile(config_path);
+    const YAML::Node yaml = YAML::LoadFile(board_path);
     const cv::Size pattern(yaml["pattern_cols"].as<int>(), yaml["pattern_rows"].as<int>());
 
     std::filesystem::create_directories(folder); // 已存在则什么都不做

@@ -47,6 +47,26 @@ vision::Armor make_armor(
     return armor;
 }
 
+// 从配置读出一套检测参数
+vision::DetectorParams load_detector_params(const std::string &config_path)
+{
+    const YAML::Node yaml = YAML::LoadFile(config_path); // 缺少配置项或类型错误会抛异常
+
+    vision::DetectorParams params;
+    params.is_red = yaml["enemy_color"].as<std::string>() == "red";
+    params.color_threshold = yaml["color_threshold"].as<double>();
+    params.brightness_threshold = yaml["brightness_threshold"].as<double>();
+    params.morph_size = yaml["morph_size"].as<int>();
+    params.min_lightbar_ratio = yaml["min_lightbar_ratio"].as<double>();
+    params.min_lightbar_area = yaml["min_lightbar_area"].as<double>();
+    params.min_height_ratio = yaml["min_height_ratio"].as<double>();
+    params.max_tilt_diff_deg = yaml["max_tilt_diff_deg"].as<double>();
+    params.max_center_offset = yaml["max_center_offset"].as<double>();
+    params.min_armor_ratio = yaml["min_armor_ratio"].as<double>();
+    params.max_armor_ratio = yaml["max_armor_ratio"].as<double>();
+    return params;
+}
+
 } // namespace
 
 namespace vision
@@ -54,29 +74,25 @@ namespace vision
 
 Detector::Detector(const std::string &config_path)
 {
-    const YAML::Node yaml = YAML::LoadFile(config_path); // 缺少配置项或类型错误会抛异常
-    is_red_ = yaml["enemy_color"].as<std::string>() == "red";
-    color_threshold_ = yaml["color_threshold"].as<double>();
-    brightness_threshold_ = yaml["brightness_threshold"].as<double>();
-    morph_size_ = yaml["morph_size"].as<int>();
-    kernel_ = cv::Mat::ones(morph_size_, morph_size_, CV_8U); // 方形核，点阵屏缝隙各向分布
-    min_lightbar_ratio_ = yaml["min_lightbar_ratio"].as<double>();
-    min_lightbar_area_ = yaml["min_lightbar_area"].as<double>();
-    min_height_ratio_ = yaml["min_height_ratio"].as<double>();
-    max_tilt_diff_deg_ = yaml["max_tilt_diff_deg"].as<double>();
-    max_center_offset_ = yaml["max_center_offset"].as<double>();
-    min_armor_ratio_ = yaml["min_armor_ratio"].as<double>();
-    max_armor_ratio_ = yaml["max_armor_ratio"].as<double>();
+    set_params(load_detector_params(config_path));
+}
+
+void Detector::set_params(const DetectorParams &params)
+{
+    params_ = params;
+    kernel_ = cv::Mat::ones(params_.morph_size, params_.morph_size, CV_8U); // 方形核，点阵屏缝隙各向分布
 }
 
 std::vector<Armor> Detector::detect(const cv::Mat &img) const
 {
-    const cv::Mat mask = lightbar_mask(img);
+    return pair(find_lightbars(close(lightbar_mask(img))));
+}
 
+cv::Mat Detector::close(const cv::Mat &mask) const
+{
     cv::Mat closed;
     cv::morphologyEx(mask, closed, cv::MORPH_CLOSE, kernel_); // 点阵屏断开，闭运算连成一片且不撑大外框
-
-    return pair(find_lightbars(closed));
+    return closed;
 }
 
 // 灯条像素：敌方通道够色，且灰度也够亮
@@ -85,14 +101,14 @@ cv::Mat Detector::lightbar_mask(const cv::Mat &img) const
     std::vector<cv::Mat> bgr;
     cv::split(img, bgr);
 
-    const cv::Mat diff = is_red_ ? bgr[2] - bgr[0] : bgr[0] - bgr[2]; // 敌方通道减对方通道
+    const cv::Mat diff = params_.is_red ? bgr[2] - bgr[0] : bgr[0] - bgr[2]; // 敌方通道减对方通道
     cv::Mat color_mask;
-    cv::threshold(diff, color_mask, color_threshold_, 255, cv::THRESH_BINARY);
+    cv::threshold(diff, color_mask, params_.color_threshold, 255, cv::THRESH_BINARY);
 
     cv::Mat gray;
     cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
     cv::Mat bright_mask;
-    cv::threshold(gray, bright_mask, brightness_threshold_, 255, cv::THRESH_BINARY);
+    cv::threshold(gray, bright_mask, params_.brightness_threshold, 255, cv::THRESH_BINARY);
 
     cv::Mat mask;
     cv::bitwise_and(color_mask, bright_mask, mask);
@@ -109,10 +125,10 @@ std::vector<cv::RotatedRect> Detector::find_lightbars(const cv::Mat &mask) const
     for (const auto &contour : contours)
     {
         const cv::RotatedRect bar = cv::minAreaRect(contour);
-        if (bar.size.width * bar.size.height < min_lightbar_area_)
+        if (bar.size.width * bar.size.height < params_.min_lightbar_area)
             continue; // 面积太小，多半是噪点
         const double short_side = std::min(bar.size.width, bar.size.height);
-        if (length(bar) < short_side * min_lightbar_ratio_)
+        if (length(bar) < short_side * params_.min_lightbar_ratio)
             continue; // 不够细长
         bars.push_back(bar);
     }
@@ -136,18 +152,18 @@ std::vector<Armor> Detector::pair(const std::vector<cv::RotatedRect> &bars) cons
             const cv::RotatedRect &b = bars[j];
 
             const double h = std::min(length(a), length(b));
-            if (h < std::max(length(a), length(b)) * min_height_ratio_)
+            if (h < std::max(length(a), length(b)) * params_.min_height_ratio)
                 continue; // 高度差太大
 
-            if (std::abs(tilts[i] - tilts[j]) > max_tilt_diff_deg_)
+            if (std::abs(tilts[i] - tilts[j]) > params_.max_tilt_diff_deg)
                 continue; // 两灯条不平行，不是同一块装甲板
 
             const double dy = std::abs(a.center.y - b.center.y);
-            if (dy > h * max_center_offset_)
+            if (dy > h * params_.max_center_offset)
                 continue; // 上下没对齐
 
             const double gap = std::abs(a.center.x - b.center.x);
-            if (gap < h * min_armor_ratio_ || gap > h * max_armor_ratio_)
+            if (gap < h * params_.min_armor_ratio || gap > h * params_.max_armor_ratio)
                 continue; // 间距不像装甲板
 
             const cv::RotatedRect &left = a.center.x < b.center.x ? a : b;

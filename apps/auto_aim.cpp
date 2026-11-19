@@ -33,6 +33,7 @@ int main(int, char **argv)
             solver.solve(armor); // 失败时 solved 保持 false，tracker 会跳过
 
         auto target = tracker.track(armors, frame.timestamp);
-        gimbal.send(aimer.aim(target, gimbal.bullet_speed(), frame.timestamp));
+        gimbal.send(aimer.aim(target, gimbal.bullet_speed(), gimbal.yaw(), gimbal.pitch(),
+                              frame.timestamp));
     }
 }

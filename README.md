@@ -42,16 +42,16 @@ cmake --build build -j
 ## 运行
 
 ```bash
-./build/camera_test configs/camera.yaml                   # 相机取流并显示，按 q 退出
+./build/camera_test configs/auto_aim.yaml                 # 相机取流并显示，按 q 退出
 ./build/detector_test configs/auto_aim.yaml               # 检测结果叠加到画面，按 q 退出
 ./build/solver_test configs/auto_aim.yaml                 # 解算结果：距离 / yaw / pitch，按 q 退出
 ./build/plot_test configs/auto_aim.yaml                   # 整链路数据推 PlotJuggler，按 q 退出
-./build/tracker_test configs/auto_aim.yaml                # 跟踪可视化：亮绿检测 / 深绿滤波 / 红框预瞄，按 q 退出
-./build/auto_aim_test configs/auto_aim.yaml               # 全链路：画面 + 推 PlotJuggler，红框为瞄准框，不发指令
+./build/tracker_test configs/auto_aim.yaml                # 跟踪可视化：绿框检测 / 深绿框滤波 / 红框红点击打位置，按 q 退出
+./build/auto_aim_test configs/auto_aim.yaml               # 全链路：画面 + 推 PlotJuggler，红框红点击打位置，不发指令
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（开火判定未接，其余已通）
-./build/calibration/transport_delay configs/camera.yaml   # 传输延迟标定
+./build/calibration/transport_delay configs/auto_aim.yaml # 传输延迟标定
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
-./build/calibration/capture configs/calibration.yaml assets/calib      # 采集棋盘格，s 存图 q 退出
+./build/calibration/capture configs/auto_aim.yaml configs/calibration.yaml assets/calib # 采集标定图
 ./build/calibration/camera_calib configs/calibration.yaml assets/calib # 算内参，打印可粘贴的 yaml
 ```
 
@@ -85,8 +85,8 @@ third_party/   海康 MVS SDK
 - `pitch = asin(y / ‖p‖)`，正为向下，也就是云台的仰角（不是 `atan2(y, z)`）
 - 装甲板模型点取灯条中轴线四端点：$(\pm 65, \pm 27.5, 0)$ mm，顺序左上→右上→右下→左下
 
-`Armor::xyz` 与 `Target` 存**世界系**坐标，由 $R_{gimbal\to world} = R_y(\text{yaw})\,R_x(-\text{pitch})$ 变换得到，
-云台转动时静止目标的坐标不变。
+`Armor::xyz` 与 `Target` 存**世界系**坐标，由 $R_{gimbal\to world} = R_y(\text{yaw})\,R_x(-\text{pitch})$
+变换得到，云台转动时静止目标的坐标不变。
 
 这两个角是该复合旋转的欧拉角，前进轴为 $(\sin\psi\cos\theta,\ \sin\theta,\ \cos\psi\cos\theta)$，
 所以 `pitch` 是仰角——用 `atan2(y, z)` 算会在 yaw 变大时偏小，6m 处 yaw 45°、仰角 10° 能差 420mm。
@@ -120,7 +120,7 @@ target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(
 - **像素格式**：显式固定 `BayerRG8`，转码用 `COLOR_BayerRG2RGB`（本机相位与 OpenCV 命名相反，用 `BayerRG2BGR` 会红蓝互换）
 - **不做防御**：相机断连、取帧失败的返回码一律不检查（理想环境前提）
 
-标定 `transport_ms`：跑 `transport_delay`，把建议值写回 `camera.yaml`。
+标定 `transport_ms`：跑 `transport_delay`，把建议值写回 `configs/auto_aim.yaml`。
 
 ## 检测参数标定
 
@@ -137,12 +137,13 @@ target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(
 采集和计算分成两个工具：采集要举着板子摆姿势，计算会反复跑。
 
 1. 跑 `capture`，实时预览上叠加识别到的角点，**识别到才允许存图**。按 `s` 存一张，按 `q` 退出。
+   第一个参数是相机参数（与总链路共用 `auto_aim.yaml`），第二个是棋盘格几何。
    摆 15~20 个姿势：覆盖画面四角与中心、远近各一档、板面绕两个轴各倾斜 20~40 度；
    别让角点贴边，避开反光和过曝。
 2. 跑 `camera_calib`，同一个目录，逐张打印重投影误差，最后打印可直接粘进 `auto_aim.yaml` 的
    `camera_matrix` 与 `distort_coeffs`。某张误差明显偏大就删掉重算。
 
-标定板几何在 `configs/calibration.yaml`：`pattern_cols` / `pattern_rows` 是**内角点**数
+棋盘格几何只放在 `configs/calibration.yaml`：`pattern_cols` / `pattern_rows` 是**内角点**数
 （格子数减一），`square_mm` 是方格边长。平均重投影误差 0.5 px 以内可用。
 
 ## 下位机通信
@@ -203,8 +204,8 @@ target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(
 
 ## 配置
 
-`configs/auto_aim.yaml` 是总配置，各模块的参数都在里面；`configs/camera.yaml` 供相机测试单独使用；
-`configs/calibration.yaml` 供相机标定使用，相机段之外多一份棋盘格几何。
+`configs/auto_aim.yaml` 是**唯一一份相机参数**，也是总配置，各模块的参数都在里面；
+`configs/calibration.yaml` 只放棋盘格几何，相机参数从总配置读。
 
 ## 待办
 

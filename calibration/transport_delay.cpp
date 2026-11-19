@@ -1,4 +1,4 @@
-// 标定：曝光结束到主机拿到帧的传输延迟，结果写回 camera.yaml 的 transport_ms
+// 标定：曝光结束到主机拿到帧的传输延迟，结果写回 auto_aim.yaml 的 transport_ms
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
@@ -38,7 +38,8 @@ int main(int, char *argv[])
     {
         camera.read(frame);
         const auto age = std::chrono::steady_clock::now() - frame.timestamp;
-        residual.push_back(std::chrono::duration<double, std::milli>(age).count() - exposure_ms / 2);
+        const double delay = std::chrono::duration<double, std::milli>(age).count();
+        residual.push_back(delay - exposure_ms / 2);
     }
 
     const double convert_ms = measure_convert_ms(frame.img.size());
@@ -51,7 +52,7 @@ int main(int, char *argv[])
     std::printf("残差(传输+转码)  最小 %.3f  中位 %.3f  最大 %.3f ms\n", residual.front(),
                 residual[residual.size() / 2], residual.back());
     std::printf("转码耗时 %.3f ms\n", convert_ms);
-    std::printf("建议写入 camera.yaml：transport_ms: %.3f\n", transport_ms);
+    std::printf("建议写入 configs/auto_aim.yaml：transport_ms: %.3f\n", transport_ms);
     if (residual.front() - convert_ms <= 0)
         std::printf("测量值已低于噪声，传输延迟可忽略，填 0 即可\n");
 

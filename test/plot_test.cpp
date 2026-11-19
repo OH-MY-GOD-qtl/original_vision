@@ -1,4 +1,4 @@
-// 真机调试：整条链路的量实时推到 PlotJuggler（UDP JSON），按 q 退出
+// 真机调试：绿框检测，深绿框滤波后位置，数据推 PlotJuggler（UDP JSON），按 q 退出
 // 只收不发，不会指挥云台
 #include <chrono>
 #include <cmath>
@@ -122,8 +122,8 @@ int main(int, char *argv[])
         if (tracked) // 红框 = 跟踪的预测位置
         {
             const auto corners = solver.project(tracked->armor(0.0));
-            for (size_t i = 0; i < 4; ++i)
-                cv::line(frame.img, corners[i], corners[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
+            for (size_t i = 0; i < 4; ++i) // 深绿：滤波后的当前位置
+                cv::line(frame.img, corners[i], corners[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
         }
 
         cv::imshow("plot_test", frame.img);

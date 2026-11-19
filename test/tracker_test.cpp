@@ -1,4 +1,4 @@
-// 真机跟踪测试：亮绿为本帧检测，深绿为滤波后位置，红框为飞行时间后的预瞄点，按 q 退出
+// 真机跟踪测试：绿框检测，深绿框滤波后位置，红框红点击打位置，按 q 退出
 #include <cmath>
 #include <string>
 #include <vector>
@@ -69,11 +69,11 @@ int main(int, char *argv[])
 
             const double flight = tracked->armor(0.0).norm() / gimbal.bullet_speed(); // 飞行时间
             const auto future = solver.project(tracked->armor(flight));
-            for (size_t i = 0; i < 4; ++i) // 红：飞行时间后的预瞄点
+            for (size_t i = 0; i < 4; ++i) // 红：击打位置
                 cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
 
             const cv::Point2f ahead = (future[0] + future[1] + future[2] + future[3]) * 0.25f;
-            cv::circle(frame.img, ahead, 6, cv::Scalar(0, 255, 255), -1); // 黄点：提前量的终点
+            cv::circle(frame.img, ahead, 4, cv::Scalar(0, 0, 255), -1); // 红点：击打点
 
             cv::putText(
                 frame.img,

@@ -1,4 +1,4 @@
-// 真机全链路可视化：亮绿检测 / 深绿滤波 / 红框瞄准点 / 青色十字为指令指向
+// 真机全链路可视化：绿框检测 / 深绿框滤波后位置 / 红框红点击打位置
 // 同时把数据推到 PlotJuggler（UDP JSON），只算不发，按 q 退出
 #include <chrono>
 #include <cmath>
@@ -91,7 +91,8 @@ int main(int, char *argv[])
         }
 
         const auto tracked = tracker.track(armors, frame.timestamp);
-        const auto command = aimer.aim(tracked, gimbal.bullet_speed(), frame.timestamp);
+        const auto command = aimer.aim(tracked, gimbal.bullet_speed(), gimbal.yaw(),
+                                       gimbal.pitch(), frame.timestamp);
 
         const double gimbal_yaw = gimbal.yaw() * rad2deg;
         const double gimbal_pitch = gimbal.pitch() * rad2deg;
@@ -150,13 +151,14 @@ int main(int, char *argv[])
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;
         const auto aim = solver.project(direction(command.yaw, command.pitch) * distance);
-        draw(frame.img, aim, cv::Scalar(0, 0, 255)); // 红框：瞄准框
+        draw(frame.img, aim, cv::Scalar(0, 0, 255)); // 红框：击打位置
 
         const auto at = center_of(aim);
         const cv::Scalar cyan(255, 255, 0);
-        cv::circle(frame.img, at, 10, cyan, 2); // 青色十字：指令指向的中心
-        cv::line(frame.img, at - cv::Point2f(16, 0), at + cv::Point2f(16, 0), cyan, 1);
-        cv::line(frame.img, at - cv::Point2f(0, 16), at + cv::Point2f(0, 16), cyan, 1);
+        const cv::Scalar red(0, 0, 255);
+        cv::circle(frame.img, at, 10, red, 2); // 红圈红叉：击打点
+        cv::line(frame.img, at - cv::Point2f(16, 0), at + cv::Point2f(16, 0), red, 1);
+        cv::line(frame.img, at - cv::Point2f(0, 16), at + cv::Point2f(0, 16), red, 1);
 
         cv::putText(frame.img,
                     cv::format("yaw %+.2f  pitch %+.2f  d %.2f  %s", cmd_yaw, cmd_pitch,

@@ -37,7 +37,8 @@ int main(int, char *argv[])
     {
         camera.read(frame);
 
-        const double dt = std::chrono::duration<double>(frame.timestamp - last).count(); // 用相机时间戳算帧率
+        const double dt =
+            std::chrono::duration<double>(frame.timestamp - last).count(); // 用相机时间戳算帧率
         last = frame.timestamp;
         std::printf("%.2f fps\n", 1 / dt);
 

@@ -74,7 +74,8 @@ void Camera::read(Frame &frame)
     const unsigned long long dev_ts = device_time(raw);
     sync_clock(dev_ts);
 
-    const auto since_epoch = std::chrono::nanoseconds(static_cast<long long>(dev_ts - dev_epoch) * 10);
+    const auto since_epoch =
+        std::chrono::nanoseconds(static_cast<long long>(dev_ts - dev_epoch) * 10);
     const auto timestamp = host_epoch + since_epoch + exposure_half; // 曝光开始加一半即曝光中点
 
     const cv::Mat bayer(raw.stFrameInfo.nHeight, raw.stFrameInfo.nWidth, CV_8U, raw.pBufAddr);

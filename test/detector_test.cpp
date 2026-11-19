@@ -1,4 +1,4 @@
-// 真机检测测试：需要 MV-CS016-10UC 在场，按 q 退出
+// 真机检测测试：绿框为检出的装甲板，按 q 退出
 #include <cstdio>
 #include <string>
 
