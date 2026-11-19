@@ -49,7 +49,7 @@ cmake --build build -j
 ./build/tracker_test configs/auto_aim.yaml                # 跟踪可视化：绿框检测 / 深绿框滤波 / 红框红点击打位置，按 q 退出
 ./build/auto_aim_test configs/auto_aim.yaml               # 全链路：画面 + 推 PlotJuggler，红框红点击打位置，不发指令
 ./build/apps/auto_aim configs/auto_aim.yaml               # 总链路（开火判定未接，其余已通）
-./build/calibration/transport_delay configs/auto_aim.yaml # 传输延迟标定
+./build/calibration/timestamp_check configs/auto_aim.yaml # 时间戳链路自检
 ./build/calibration/detector_tuning configs/auto_aim.yaml # 检测参数标定，ESC 退出
 ./build/calibration/capture configs/auto_aim.yaml configs/calibration.yaml assets/calib # 采集标定图
 ./build/calibration/camera_calib configs/calibration.yaml assets/calib # 算内参，打印可粘贴的 yaml
@@ -115,13 +115,14 @@ target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(
 
 几个关键点：
 
-- **设备时间戳**：`nDevTimeStamp` 单位 10ns、标记曝光开始。首帧对时一次，之后只用设备时间差推导，帧间隔恒定 6.047ms（165.37fps），不受主机调度影响
+- **设备时间戳**：`nDevTimeStamp` 单位 10ns、标记曝光开始。对时一次，之后只用设备时间差推导，帧间隔恒定 6.047ms（165.37fps），不受主机调度影响
+- **对时基准**：构造时预热 100 帧，取到手延迟最小的那帧对齐时钟。首帧带着流建立开销，拿它对时会让之后每一帧都稳定偏晚数百微秒
 - **曝光中点**：设备时刻 + 曝光时长 / 2
-- **传输补偿**：`transport_ms` 抵消 USB 传输延迟，实测低于 0.3ms 噪声，故为 0
 - **像素格式**：显式固定 `BayerRG8`，转码用 `COLOR_BayerRG2RGB`（本机相位与 OpenCV 命名相反，用 `BayerRG2BGR` 会红蓝互换）
 - **不做防御**：相机断连、取帧失败的返回码一律不检查（理想环境前提）
 
-标定 `transport_ms`：跑 `transport_delay`，把建议值写回 `configs/auto_aim.yaml`。
+自检时间戳链路：跑 `timestamp_check`，看帧间隔是否恒为 6.047ms、到手延迟是否稳定、设备时钟相对主机漂多少 ppm。
+传输延迟不从软件里单独标定 —— 它和曝光时长共用一个观测量（帧到手时刻），拆不开；而 `frame.timestamp` 只参与帧间求差，常数偏移自己抵消，所以不设补偿参数。
 
 ## 检测参数标定
 

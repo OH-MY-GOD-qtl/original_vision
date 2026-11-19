@@ -15,7 +15,7 @@ struct Frame
     std::chrono::steady_clock::time_point timestamp;
 };
 
-// 海康相机：构造即打开并取流，析构自动释放
+// 海康相机：构造即打开、取流、对时，析构自动释放
 class Camera
 {
   public:
@@ -28,14 +28,11 @@ class Camera
     void read(Frame &frame); // 写入 frame.img（复用其内存）与 frame.timestamp
 
   private:
-    void sync_clock(unsigned long long dev_ts); // 首帧把设备时钟对到主机时钟
+    void anchor_clock(); // 预热若干帧，用最快的一帧把设备时钟对到主机时钟
 
     void *handle = nullptr;                             // MV_CC 句柄，用 void* 保持头文件不依赖 SDK
     std::chrono::microseconds exposure_half{0};         // 设备戳标记曝光开始，加回一半才是曝光中点
-    std::chrono::microseconds transport{0};             // 曝光结束到主机拿到帧的传输延迟
-    std::chrono::steady_clock::time_point host_epoch{}; // 首帧的主机时刻
-    unsigned long long dev_epoch = 0;                   // 首帧的设备时刻，单位 10ns
-    bool clock_synced = false;                          // 首帧是否已完成对时
+    std::chrono::steady_clock::time_point host_epoch{}; // 设备时钟零点对应的主机时刻
 };
 
 } // namespace vision

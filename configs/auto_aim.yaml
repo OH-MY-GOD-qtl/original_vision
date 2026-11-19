@@ -3,7 +3,6 @@
 # ---- 相机 ----
 exposure_ms: 5.0
 gain: 16.0
-transport_ms: 0.0
 
 # ---- 检测 ----
 enemy_color: "blue"         # red 或 blue
