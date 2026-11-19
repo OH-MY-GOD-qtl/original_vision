@@ -116,6 +116,7 @@ int main(int, char *argv[])
             "\"solver/solved\":%d,"
             "\"target/dist\":%.4f,"
             "\"predict/dist\":%.4f,"
+            "\"predict/theta_deg\":%.3f,\"predict/omega_deg\":%.3f,"
             "\"tx/mode\":%d,"
             "\"tx/yaw_deg\":%.3f,\"tx/pitch_deg\":%.3f,\"tx/dist\":%.4f,"
             "\"tx/yaw_vel_deg\":%.3f,\"tx/yaw_acc_deg\":%.3f,"
@@ -126,10 +127,13 @@ int main(int, char *argv[])
             "\"err/yaw_deg\":%.3f,\"err/pitch_deg\":%.3f,"
             "\"gimbal/bullet_speed\":%.2f}}",
             time_s, 1 / dt, armors.size(), measured ? 1 : 0, measured ? measured->xyz.norm() : 0.0,
-            tracked ? tracked->xyz.norm() : 0.0, mode, cmd_yaw, cmd_pitch, command.distance,
-            cmd_yaw_vel, cmd_yaw_acc, cmd_pitch_vel, cmd_pitch_acc, command.shoot ? 1 : 0,
-            command.is_empty ? 1 : 0, gimbal_yaw, gimbal_pitch, gimbal_yaw_vel, gimbal_pitch_vel,
-            cmd_yaw - gimbal_yaw, cmd_pitch - gimbal_pitch, gimbal.bullet_speed());
+            tracked ? tracked->armor(0.0).norm() : 0.0,
+            tracked ? tracked->theta * 180 / CV_PI : 0.0,
+            tracked ? tracked->omega * 180 / CV_PI : 0.0, mode, cmd_yaw, cmd_pitch,
+            command.distance, cmd_yaw_vel, cmd_yaw_acc, cmd_pitch_vel, cmd_pitch_acc,
+            command.shoot ? 1 : 0, command.is_empty ? 1 : 0, gimbal_yaw, gimbal_pitch,
+            gimbal_yaw_vel, gimbal_pitch_vel, cmd_yaw - gimbal_yaw, cmd_pitch - gimbal_pitch,
+            gimbal.bullet_speed());
 
         ::sendto(sock, json, std::strlen(json), 0, reinterpret_cast<sockaddr *>(&address),
                  sizeof address);
@@ -141,7 +145,7 @@ int main(int, char *argv[])
         }
 
         if (tracked) // 深绿：滤波后的位置
-            draw(frame.img, solver.project(tracked->xyz), cv::Scalar(0, 128, 0));
+            draw(frame.img, solver.project(tracked->armor(0.0)), cv::Scalar(0, 128, 0));
 
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;

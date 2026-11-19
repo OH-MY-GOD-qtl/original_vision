@@ -11,7 +11,7 @@
 | `Camera` | ✅ 已实现 | 海康相机取流，输出图像 + 曝光中点时刻 |
 | `Detector` | ✅ 已实现 | 图像 → 装甲板像素角点（传统色差法，参数待真机标定） |
 | `Solver` | ✅ 已实现 | 像素角点 → 世界系坐标（IPPE PnP + 手眼变换） |
-| `Tracker` | ✅ 已实现 | 多帧装甲板 → 唯一目标（6 维等速卡尔曼） |
+| `Tracker` | ✅ 已实现 | 多帧装甲板 → 唯一目标（8 维旋转卡尔曼：圆心 + 转角） |
 | `Aimer` | ✅ 已实现 | 预瞄点外推 + 重力补偿；开火判定未接 |
 | `Gimbal` | ✅ 已实现 | 指令 ↔ 下位机串口（115200 8N1，CRC16） |
 
@@ -95,6 +95,21 @@ third_party/   海康 MVS SDK
 
 `Armor::yaw` 是板面法线的世界系偏航角，指向相机那一侧，也就是装甲板在圆上的方位。
 
+## 跟踪
+
+装甲板固定在底盘四周的一个圆上，所以跟踪的不是一块自由运动的板，而是**圆心 + 转角**：
+
+- 状态 8 维：`[cx cy cz vx vy vz theta omega]`，`theta` 是装甲板在圆上的方位，也是板面朝向
+- 半径取配置里的 `armor_radius`，板子尺寸固定所以写死，不参与估计
+- 观测 4 维：装甲板世界坐标（3）+ 板面角度（1），角度对位置有耦合，雅可比里 `∂h/∂theta = r`
+- 换板：4 块板间隔 90°，看到另一块时位置和角度一起跳，转角先对齐再滤波，转速不受影响
+
+预瞄不再按直线外推，而是让转角走 `theta + omega * t`，所以目标自转时预瞄点也在圆上跑：
+
+```cpp
+target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(theta + omega t))
+```
+
 ## 相机模块
 
 几个关键点：
@@ -163,7 +178,9 @@ third_party/   海康 MVS SDK
 | `solver/solved` | 是否有解算成功的板（0/1），用它判断目标相关字段该段是否有效 |
 | `target/x` `y` `z` `dist` | 目标世界坐标与距离，m |
 | `target/yaw_deg` `pitch_deg` | 目标方向，度 |
-| `predict/dist` | 滤波后的预测距离，与 `target/dist` 对比可看出滤波效果 |
+| `predict/dist` | 滤波后的距离，与 `target/dist` 对比可看出滤波效果 |
+| `predict/theta_deg` | 装甲板在圆上的方位角，换板时会跳 90° |
+| `predict/omega_deg` | 估计的转速，度/秒 |
 | `gimbal/yaw_deg` `pitch_deg` | 云台当前姿态，度 |
 | `gimbal/yaw_vel_deg` `pitch_vel_deg` | 云台回传的角速度，度/秒 |
 | `err/yaw_deg` `pitch_deg` | 目标减云台，度 |

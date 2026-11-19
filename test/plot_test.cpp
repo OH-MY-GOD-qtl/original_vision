@@ -95,6 +95,7 @@ int main(int, char *argv[])
             "\"target/x\":%.4f,\"target/y\":%.4f,\"target/z\":%.4f,\"target/dist\":%.4f,"
             "\"target/yaw_deg\":%.3f,\"target/pitch_deg\":%.3f,"
             "\"predict/dist\":%.4f,"
+            "\"predict/theta_deg\":%.3f,\"predict/omega_deg\":%.3f,"
             "\"gimbal/yaw_deg\":%.3f,\"gimbal/pitch_deg\":%.3f,"
             "\"gimbal/yaw_vel_deg\":%.3f,\"gimbal/pitch_vel_deg\":%.3f,"
             "\"err/yaw_deg\":%.3f,\"err/pitch_deg\":%.3f,"
@@ -102,7 +103,9 @@ int main(int, char *argv[])
             time_s, 1 / dt, armors.size(), target ? 1 : 0, target ? target->xyz.x() : 0.0,
             target ? target->xyz.y() : 0.0, target ? target->xyz.z() : 0.0,
             target ? target->xyz.norm() : 0.0, target_yaw, target_pitch,
-            tracked ? tracked->xyz.norm() : 0.0, gimbal_yaw, gimbal_pitch, gimbal_yaw_vel,
+            tracked ? tracked->armor(0.0).norm() : 0.0,
+            tracked ? tracked->theta * 180 / CV_PI : 0.0,
+            tracked ? tracked->omega * 180 / CV_PI : 0.0, gimbal_yaw, gimbal_pitch, gimbal_yaw_vel,
             gimbal_pitch_vel, target_yaw - gimbal_yaw, target_pitch - gimbal_pitch,
             gimbal.bullet_speed());
 
@@ -118,7 +121,7 @@ int main(int, char *argv[])
 
         if (tracked) // 红框 = 跟踪的预测位置
         {
-            const auto corners = solver.project(tracked->xyz);
+            const auto corners = solver.project(tracked->armor(0.0));
             for (size_t i = 0; i < 4; ++i)
                 cv::line(frame.img, corners[i], corners[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
         }

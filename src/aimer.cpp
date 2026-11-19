@@ -63,17 +63,18 @@ Command Aimer::solve(
     const Target &target, double bullet_speed, std::chrono::steady_clock::time_point) const
 {
     // 预瞄点越远飞行时间越长，时间越长预瞄点又越远，先粗算一轮再修正
-    const Eigen::Vector3d rough =
-        target.xyz + target.velocity * (target.xyz.norm() / bullet_speed);
+    const double now_range = target.armor(0.0).norm();
+    const Eigen::Vector3d rough = target.armor(now_range / bullet_speed);
     const double flight = rough.norm() / bullet_speed;
 
-    Eigen::Vector3d aim = target.xyz + target.velocity * flight;
+    Eigen::Vector3d aim = target.armor(flight); // 装甲板沿圆周走到那儿
     aim.y() -= 0.5 * gravity * flight * flight; // 重力下坠，y 朝下所以减 y 等于抬高
 
+    const double distance = aim.norm();
     Command command;
     command.yaw = std::atan2(aim.x(), aim.z());
-    command.pitch = std::asin(aim.y() / aim.norm()); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
-    command.distance = aim.norm();
+    command.pitch = std::asin(aim.y() / distance); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
+    command.distance = distance;
     return command;
 }
 

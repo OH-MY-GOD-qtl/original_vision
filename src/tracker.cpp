@@ -1,5 +1,7 @@
 #include "tracker.hpp"
 
+#include <cmath>
+
 #include <Eigen/LU> // 3x3 求逆的实现在这里
 #include <yaml-cpp/yaml.h>
 
@@ -11,7 +13,27 @@ Tracker::Tracker(const std::string &config_path)
     const YAML::Node yaml = YAML::LoadFile(config_path); // 缺少配置项或类型错误会抛异常
     process_noise_ = yaml["track_process_noise"].as<double>();
     measure_noise_ = yaml["track_measure_noise"].as<double>();
+    yaw_noise_ = yaml["track_yaw_noise"].as<double>();
+    rotation_noise_ = yaml["track_rotation_noise"].as<double>();
+    radius_ = yaml["armor_radius"].as<double>() / 1000.0; // 配置写 mm，算的时候用 m
     max_lost_ = yaml["track_max_lost"].as<int>();
+}
+
+Eigen::Vector3d Tracker::armor_of(const State &state) const
+{
+    const double theta = state(6);
+    return state.head<3>() + radius_ * Eigen::Vector3d(std::sin(theta), 0.0, std::cos(theta));
+}
+
+Target Tracker::current() const
+{
+    Target target;
+    target.center = x_.head<3>();
+    target.velocity = x_.segment<3>(3);
+    target.radius = radius_;
+    target.theta = x_(6);
+    target.omega = x_(7);
+    return target;
 }
 
 std::optional<Target> Tracker::track(
@@ -31,28 +53,29 @@ std::optional<Target> Tracker::track(
             return std::nullopt;
 
         x_.setZero();
-        x_.head<3>() = first->xyz;
+        x_(6) = first->yaw; // 板面角度直接给出装甲板在圆上的方位
+        x_.head<3>() =
+            first->xyz - radius_ * Eigen::Vector3d(std::sin(x_(6)), 0.0, std::cos(x_(6)));
         P_.setZero();
-        P_.diagonal() << 1, 1, 1, 100, 100, 100; // 初始位置 1 m²，速度 100 (m/s)²，都先不信
+        P_.diagonal() << 1, 1, 1, 100, 100, 100, 0.1, 25; // 速度、转速都先不信
         last_ = t;
         inited_ = true;
         lost_ = 0;
 
-        Target target;
-        target.xyz = x_.head<3>();
-        return target; // velocity 保持 0，等第二帧才有速度
+        return current(); // omega 保持 0，等第二帧才有转速
     }
 
     predict(std::chrono::duration<double>(t - last_).count());
     last_ = t;
 
-    const Armor *nearest = nullptr; // 离预测位置最近的那块就是同一块板
+    const Eigen::Vector3d predicted = armor_of(x_); // 预测的那块板在哪
+    const Armor *nearest = nullptr;
     double nearest_sq = 0;
     for (const auto &armor : armors)
     {
         if (!armor.solved)
             continue;
-        const double sq = (armor.xyz - x_.head<3>()).squaredNorm();
+        const double sq = (armor.xyz - predicted).squaredNorm();
         if (!nearest || sq < nearest_sq)
         {
             nearest = &armor;
@@ -67,48 +90,73 @@ std::optional<Target> Tracker::track(
             inited_ = false; // 丢太久，下块板重新起步
             return std::nullopt;
         }
-        Target target; // 短暂丢失就靠预测撑过去
-        target.xyz = x_.head<3>();
-        target.velocity = x_.tail<3>();
-        return target;
+        return current(); // 短暂丢失就靠预测撑过去
     }
 
     lost_ = 0;
-    update(nearest->xyz);
-
-    Target target;
-    target.xyz = x_.head<3>();
-    target.velocity = x_.tail<3>();
-    return target;
+    update(*nearest);
+    return current();
 }
 
 void Tracker::predict(double dt)
 {
-    const Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
-
+    // 圆心等速，转角按角速度推进
     Covariance F = Covariance::Identity();
-    F.block<3, 3>(0, 3) = dt * I;
+    F.block<3, 3>(0, 3) = dt * Eigen::Matrix3d::Identity();
+    F(6, 7) = dt;
 
-    // 白噪声加速度模型：q 是加速度的谱密度
+    // 圆心用白噪声加速度模型，转角用白噪声角加速度模型
+    const Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
     Covariance Q = Covariance::Zero();
     Q.block<3, 3>(0, 0) = dt * dt * dt * dt / 4 * I;
     Q.block<3, 3>(0, 3) = dt * dt * dt / 2 * I;
     Q.block<3, 3>(3, 0) = dt * dt * dt / 2 * I;
     Q.block<3, 3>(3, 3) = dt * dt * I;
+    Q *= process_noise_;
+    Q(6, 6) = rotation_noise_ * dt * dt * dt / 3;
+    Q(6, 7) = rotation_noise_ * dt * dt / 2;
+    Q(7, 6) = rotation_noise_ * dt * dt / 2;
+    Q(7, 7) = rotation_noise_ * dt;
 
     x_ = F * x_;
-    P_ = F * P_ * F.transpose() + process_noise_ * Q;
+    P_ = F * P_ * F.transpose() + Q;
 }
 
-void Tracker::update(const Eigen::Vector3d &z)
+void Tracker::update(const Armor &armor)
 {
-    Eigen::Matrix<double, 3, 6> H = Eigen::Matrix<double, 3, 6>::Zero();
+    // 板面角度是 atan2 出来的，落在 ±π；状态里的转角一直在累加，先折到同一分支
+    double diff = std::remainder(armor.yaw - x_(6), 2 * CV_PI);
+    if (std::abs(diff) > CV_PI / 4)
+    {
+        x_(6) += diff;  // 换板：4 块板间隔 90°，转角直接对齐新板，转速不受影响
+        diff = 0.0;     // 这一帧已经对齐，不再用它修正转角
+    }
+    const double yaw = x_(6) + diff;
+
+    const double theta = x_(6);
+    const double s = std::sin(theta);
+    const double c = std::cos(theta);
+
+    // 观测是装甲板位置和板面角度，位置对转角有耦合
+    Eigen::Matrix<double, 4, 8> H = Eigen::Matrix<double, 4, 8>::Zero();
     H.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+    H(0, 6) = radius_ * c;
+    H(2, 6) = -radius_ * s;
+    H(3, 6) = 1.0;
 
-    const Eigen::Matrix3d S = H * P_ * H.transpose() + measure_noise_ * Eigen::Matrix3d::Identity();
-    const Eigen::Matrix<double, 6, 3> K = P_ * H.transpose() * S.inverse();
+    Eigen::Matrix4d R = Eigen::Matrix4d::Zero();
+    R.diagonal() << measure_noise_, measure_noise_, measure_noise_, yaw_noise_;
 
-    x_ += K * (z - H * x_);
+    Eigen::Vector4d z;
+    z << armor.xyz, yaw;
+
+    Eigen::Vector4d h;
+    h << armor_of(x_), x_(6);
+
+    const Eigen::Matrix4d S = H * P_ * H.transpose() + R;
+    const Eigen::Matrix<double, 8, 4> K = P_ * H.transpose() * S.inverse();
+
+    x_ += K * (z - h);
     P_ = (Covariance::Identity() - K * H) * P_;
 }
 

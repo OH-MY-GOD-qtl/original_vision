@@ -1,5 +1,7 @@
 // 真机跟踪测试：亮绿为本帧检测，深绿为滤波后位置，红框为飞行时间后的预瞄点，按 q 退出
+#include <cmath>
 #include <string>
+#include <vector>
 
 #include <opencv2/opencv.hpp>
 
@@ -45,23 +47,39 @@ int main(int, char *argv[])
 
         if (tracked)
         {
-            const auto now = solver.project(tracked->xyz); // 深绿：滤波后的当前位置
+            // 蓝圈：装甲板绕的圆，白点圆心，一眼看出转速估计对不对
+            std::vector<cv::Point2f> ring;
+            for (int i = 0; i <= 36; ++i)
+            {
+                const double a = i * CV_PI / 18;
+                const Eigen::Vector3d p = tracked->center + tracked->radius * Eigen::Vector3d(
+                                                                std::sin(a), 0, std::cos(a));
+                const auto corner = solver.project(p);
+                ring.push_back((corner[0] + corner[1] + corner[2] + corner[3]) * 0.25f);
+            }
+            cv::polylines(frame.img, ring, false, cv::Scalar(255, 128, 0), 1);
+            const auto middle = solver.project(tracked->center);
+            const cv::Point2f center =
+                (middle[0] + middle[1] + middle[2] + middle[3]) * 0.25f;
+            cv::circle(frame.img, center, 3, cv::Scalar(255, 255, 255), -1);
+
+            const auto now = solver.project(tracked->armor(0.0)); // 深绿：滤波后的当前位置
             for (size_t i = 0; i < 4; ++i)
                 cv::line(frame.img, now[i], now[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
 
-            const double flight = tracked->xyz.norm() / gimbal.bullet_speed(); // 弹丸飞行时间
-            const auto future = solver.project(tracked->xyz + tracked->velocity * flight);
+            const double flight = tracked->armor(0.0).norm() / gimbal.bullet_speed(); // 飞行时间
+            const auto future = solver.project(tracked->armor(flight));
             for (size_t i = 0; i < 4; ++i) // 红：飞行时间后的预瞄点
                 cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
 
             const cv::Point2f ahead = (future[0] + future[1] + future[2] + future[3]) * 0.25f;
             cv::circle(frame.img, ahead, 6, cv::Scalar(0, 255, 255), -1); // 黄点：提前量的终点
 
-            cv::putText(frame.img,
-                        cv::format("%.2fm  v=%.2f  t=%.3fs  lead=%.2f", tracked->xyz.norm(),
-                                   tracked->velocity.norm(), flight,
-                                   tracked->velocity.norm() * flight),
-                        ahead, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 255), 2);
+            cv::putText(
+                frame.img,
+                cv::format("%.2fm  v=%.2f  w=%.2frad/s  t=%.3fs", tracked->armor(0.0).norm(),
+                           tracked->armor_velocity(0.0).norm(), tracked->omega, flight),
+                ahead, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 255), 2);
         }
 
         cv::imshow("tracker_test", frame.img);
