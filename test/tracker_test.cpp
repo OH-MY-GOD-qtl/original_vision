@@ -13,6 +13,13 @@
 #include "solver.hpp"
 #include "tracker.hpp"
 
+namespace
+{
+
+constexpr double lead_scale = 3.0; // 调试用：把击打点相对当前装甲板的位移放大，1 为真实值
+
+} // namespace
+
 int main(int, char *argv[])
 {
     const std::string config_path = argv[1];
@@ -74,8 +81,10 @@ int main(int, char *argv[])
             const auto command =
                 aimer.aim(tracked, gimbal.bullet_speed(), gimbal.yaw(), gimbal.pitch(),
                           frame.timestamp);
-            const auto future = solver.project(
-                vision::direction_of(command.yaw, command.pitch) * command.distance);
+            const Eigen::Vector3d aim =
+                vision::direction_of(command.yaw, command.pitch) * command.distance;
+            const auto future = solver.project(tracked->armor(0.0) +
+                                               lead_scale * (aim - tracked->armor(0.0)));
             for (size_t i = 0; i < 4; ++i) // 红：击打位置
                 cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
 

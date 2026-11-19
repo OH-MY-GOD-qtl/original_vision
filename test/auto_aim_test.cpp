@@ -25,6 +25,7 @@ namespace
 {
 
 constexpr double rad2deg = 180.0 / CV_PI; // 串口上下行都是弧度，只有上屏才转度
+constexpr double lead_scale = 1.0;        // 调试用：把击打点相对当前装甲板的位移放大，1 为真实值
 
 void draw(cv::Mat &img, const std::array<cv::Point2f, 4> &corners, const cv::Scalar &color)
 {
@@ -140,11 +141,13 @@ int main(int, char *argv[])
 
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;
-        const auto aim =
-            solver.project(vision::direction_of(command.yaw, command.pitch) * distance);
-        draw(frame.img, aim, cv::Scalar(0, 0, 255)); // 红框：击打位置
+        const Eigen::Vector3d aim =
+            vision::direction_of(command.yaw, command.pitch) * distance;
+        const Eigen::Vector3d now = tracked ? tracked->armor(0.0) : aim; // 无目标时退化到真实击打点
+        const auto box = solver.project(now + lead_scale * (aim - now)); // 提前量与重力一起放大
+        draw(frame.img, box, cv::Scalar(0, 0, 255)); // 红框：击打位置
 
-        const auto at = vision::center_of(aim);
+        const auto at = vision::center_of(box);
         const cv::Scalar cyan(255, 255, 0);
         const cv::Scalar red(0, 0, 255);
         cv::circle(frame.img, at, 10, red, 2); // 红圈红叉：击打点
