@@ -48,19 +48,19 @@ int main(int, char *argv[])
         if (tracked)
         {
             // 蓝圈：装甲板绕的圆，白点圆心，一眼看出转速估计对不对
-            std::vector<cv::Point2f> ring;
+            std::vector<cv::Point> ring; // polylines 只收整数点
             for (int i = 0; i <= 36; ++i)
             {
                 const double a = i * CV_PI / 18;
                 const Eigen::Vector3d p = tracked->center + tracked->radius * Eigen::Vector3d(
                                                                 std::sin(a), 0, std::cos(a));
                 const auto corner = solver.project(p);
-                ring.push_back((corner[0] + corner[1] + corner[2] + corner[3]) * 0.25f);
+                const cv::Point2f point = (corner[0] + corner[1] + corner[2] + corner[3]) * 0.25f;
+                ring.emplace_back(cvRound(point.x), cvRound(point.y));
             }
             cv::polylines(frame.img, ring, false, cv::Scalar(255, 128, 0), 1);
             const auto middle = solver.project(tracked->center);
-            const cv::Point2f center =
-                (middle[0] + middle[1] + middle[2] + middle[3]) * 0.25f;
+            const cv::Point2f center = (middle[0] + middle[1] + middle[2] + middle[3]) * 0.25f;
             cv::circle(frame.img, center, 3, cv::Scalar(255, 255, 255), -1);
 
             const auto now = solver.project(tracked->armor(0.0)); // 深绿：滤波后的当前位置
