@@ -24,6 +24,7 @@ class Aimer
     Command solve(
         const Target &target, double bullet_speed, std::chrono::steady_clock::time_point t) const;
 
+    double gravity_;          // 重力加速度，m/s²，方向竖直向下
     double lost_hold_s_;      // 丢失目标后原位停留时长
     double return_rad_per_s_; // 归位角速度
     bool started_ = false;    // 首帧已把当前云台姿态当作原位

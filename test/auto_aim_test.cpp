@@ -14,6 +14,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "aimer.hpp"
+#include "angle.hpp"
 #include "camera.hpp"
 #include "detector.hpp"
 #include "gimbal.hpp"
@@ -24,12 +25,6 @@ namespace
 {
 
 constexpr double rad2deg = 180.0 / CV_PI; // 串口上下行都是弧度，只有上屏才转度
-
-// 世界系角度 → 单位方向，即云台模型 Ry(yaw)*Rx(-pitch) 的前进轴
-Eigen::Vector3d direction(double yaw, double pitch)
-{
-    return {std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch)};
-}
 
 cv::Point2f center_of(const std::array<cv::Point2f, 4> &corners)
 {
@@ -150,7 +145,8 @@ int main(int, char *argv[])
 
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;
-        const auto aim = solver.project(direction(command.yaw, command.pitch) * distance);
+        const auto aim =
+            solver.project(vision::direction_of(command.yaw, command.pitch) * distance);
         draw(frame.img, aim, cv::Scalar(0, 0, 255)); // 红框：击打位置
 
         const auto at = center_of(aim);

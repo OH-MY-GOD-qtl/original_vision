@@ -13,20 +13,12 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "angle.hpp"
 #include "camera.hpp"
 #include "detector.hpp"
 #include "gimbal.hpp"
 #include "solver.hpp"
 #include "tracker.hpp"
-
-namespace
-{
-
-// 世界系坐标 → 角度（度），pitch 取仰角
-double yaw_deg(const Eigen::Vector3d &p) { return std::atan2(p.x(), p.z()) * 180 / CV_PI; }
-double pitch_deg(const Eigen::Vector3d &p) { return std::asin(p.y() / p.norm()) * 180 / CV_PI; }
-
-} // namespace
 
 int main(int, char *argv[])
 {
@@ -76,8 +68,10 @@ int main(int, char *argv[])
         }
 
         // 没解算成功时角度填 0，用 solver/solved 判断该点是否有效
-        const double target_yaw = target ? yaw_deg(target->xyz) : 0.0;
-        const double target_pitch = target ? pitch_deg(target->xyz) : 0.0;
+        const Eigen::Vector2d angles =
+            target ? vision::angles_of(target->xyz) : Eigen::Vector2d::Zero();
+        const double target_yaw = angles.x() * 180 / CV_PI;
+        const double target_pitch = angles.y() * 180 / CV_PI;
         const double gimbal_yaw = gimbal.yaw() * 180 / CV_PI;
         const double gimbal_pitch = gimbal.pitch() * 180 / CV_PI;
         const double gimbal_yaw_vel = gimbal.yaw_vel() * 180 / CV_PI;

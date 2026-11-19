@@ -4,6 +4,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "angle.hpp"
 #include "camera.hpp"
 #include "detector.hpp"
 #include "solver.hpp"
@@ -38,8 +39,9 @@ int main(int, char *argv[])
 
             const cv::Point2f center =
                 (armor.corners[0] + armor.corners[1] + armor.corners[2] + armor.corners[3]) * 0.25f;
-            const double yaw = std::atan2(armor.xyz.x(), armor.xyz.z()) * 180 / CV_PI;
-            const double pitch = std::asin(armor.xyz.y() / armor.xyz.norm()) * 180 / CV_PI;
+            const Eigen::Vector2d angles = vision::angles_of(armor.xyz);
+            const double yaw = angles.x() * 180 / CV_PI;
+            const double pitch = angles.y() * 180 / CV_PI;
             const double board = armor.yaw * 180 / CV_PI;
 
             // 洋红线：板面法线，指向相机方向；它和装甲板方位一致说明角度解算对

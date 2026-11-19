@@ -53,7 +53,7 @@ set_target_properties(plot_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
 
 # 真机跟踪可视化
 add_executable(tracker_test test/tracker_test.cpp)
-target_link_libraries(tracker_test PRIVATE camera detector solver tracker gimbal)
+target_link_libraries(tracker_test PRIVATE camera detector solver tracker aimer gimbal)
 set_target_properties(tracker_test PROPERTIES BUILD_RPATH "${SDK}/lib/${SDK_ARCH}")
 
 add_executable(auto_aim_test test/auto_aim_test.cpp)

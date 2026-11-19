@@ -1,4 +1,5 @@
 #include "aimer.hpp"
+#include "angle.hpp"
 
 #include <cmath>
 
@@ -8,7 +9,6 @@ namespace
 {
 
 constexpr double deg2rad = 3.14159265358979323846 / 180.0;
-constexpr double gravity = 9.8; // 重力加速度，m/s²，方向竖直向下
 
 // 朝 0 走一步，单步不超过 step
 double toward_zero(double value, double step)
@@ -28,6 +28,7 @@ namespace vision
 Aimer::Aimer(const std::string &config_path)
 {
     const YAML::Node yaml = YAML::LoadFile(config_path); // 缺少配置项或类型错误会抛异常
+    gravity_ = yaml["gravity"].as<double>();
     lost_hold_s_ = yaml["lost_hold_ms"].as<double>() / 1000.0;
     return_rad_per_s_ = yaml["return_deg_per_s"].as<double>() * deg2rad;
 }
@@ -76,13 +77,13 @@ Command Aimer::solve(
     const double flight = rough.norm() / bullet_speed;
 
     Eigen::Vector3d aim = target.armor(flight); // 装甲板沿圆周走到那儿
-    aim.y() -= 0.5 * gravity * flight * flight; // 重力下坠，y 朝下所以减 y 等于抬高
+    aim.y() -= 0.5 * gravity_ * flight * flight; // 重力下坠，y 朝下所以减 y 等于抬高
 
-    const double distance = aim.norm();
+    const Eigen::Vector2d angles = angles_of(aim);
     Command command;
-    command.yaw = std::atan2(aim.x(), aim.z());
-    command.pitch = std::asin(aim.y() / distance); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
-    command.distance = distance;
+    command.yaw = angles.x();
+    command.pitch = angles.y(); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
+    command.distance = aim.norm();
     return command;
 }
 

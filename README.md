@@ -75,6 +75,7 @@ third_party/   海康 MVS SDK
   - `armor.hpp` —— Detector 产、Solver 消费
   - `target.hpp` —— Tracker 产、Aimer 消费
   - `command.hpp` —— Aimer 产、Gimbal 消费
+  - `angle.hpp` —— 角度约定 `direction_of` / `angles_of`，全项目共用
 - 图像与时间戳用 `Frame` 强绑定，不会配错
 
 ## 坐标与角度约定

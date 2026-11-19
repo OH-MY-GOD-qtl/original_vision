@@ -5,6 +5,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "aimer.hpp"
+#include "angle.hpp"
 #include "camera.hpp"
 #include "detector.hpp"
 #include "gimbal.hpp"
@@ -19,6 +21,7 @@ int main(int, char *argv[])
     vision::Detector detector(config_path);
     vision::Solver solver(config_path);
     vision::Tracker tracker(config_path);
+    vision::Aimer aimer(config_path);
     vision::Gimbal gimbal(config_path);
 
     cv::namedWindow("tracker_test", cv::WINDOW_NORMAL);
@@ -67,8 +70,12 @@ int main(int, char *argv[])
             for (size_t i = 0; i < 4; ++i)
                 cv::line(frame.img, now[i], now[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
 
-            const double flight = tracked->armor(0.0).norm() / gimbal.bullet_speed(); // 飞行时间
-            const auto future = solver.project(tracked->armor(flight));
+            // 击打位置：交给 Aimer 算，工具不重复弹道
+            const auto command =
+                aimer.aim(tracked, gimbal.bullet_speed(), gimbal.yaw(), gimbal.pitch(),
+                          frame.timestamp);
+            const auto future = solver.project(
+                vision::direction_of(command.yaw, command.pitch) * command.distance);
             for (size_t i = 0; i < 4; ++i) // 红：击打位置
                 cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
 
@@ -77,8 +84,8 @@ int main(int, char *argv[])
 
             cv::putText(
                 frame.img,
-                cv::format("%.2fm  v=%.2f  w=%.2frad/s  t=%.3fs", tracked->armor(0.0).norm(),
-                           tracked->armor_velocity(0.0).norm(), tracked->omega, flight),
+                cv::format("%.2fm  v=%.2f  w=%.2frad/s", tracked->armor(0.0).norm(),
+                           tracked->armor_velocity(0.0).norm(), tracked->omega),
                 ahead, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 255), 2);
         }
 
