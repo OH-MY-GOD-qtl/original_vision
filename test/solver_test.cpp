@@ -8,6 +8,7 @@
 #include "camera.hpp"
 #include "detector.hpp"
 #include "solver.hpp"
+#include "viz.hpp"
 
 int main(int, char *argv[])
 {
@@ -33,9 +34,7 @@ int main(int, char *argv[])
             if (!armor.solved)
                 continue; // 解算失败的不画
 
-            for (size_t i = 0; i < 4; ++i)
-                cv::line(frame.img, armor.corners[i], armor.corners[(i + 1) % 4],
-                         cv::Scalar(0, 255, 0), 2);
+            vision::draw_quad(frame.img, armor.corners, vision::color_detected);
 
             const cv::Point2f center = vision::center_of(armor.corners);
             const Eigen::Vector2d angles = vision::angles_of(armor.xyz);
@@ -49,7 +48,7 @@ int main(int, char *argv[])
             const cv::Point2f tip = vision::center_of(tail);
             cv::line(frame.img, center, tip, cv::Scalar(255, 0, 255), 2);
 
-            cv::circle(frame.img, center, 4, cv::Scalar(0, 255, 0), -1);
+            cv::circle(frame.img, center, 4, vision::color_detected, -1);
             const std::string text = cv::format("%.2fm yaw%.1f pitch%.1f board%.1f",
                                                 armor.xyz.norm(), yaw, pitch, board);
             cv::putText(frame.img, text, center, cv::FONT_HERSHEY_SIMPLEX, 0.8,

@@ -19,6 +19,7 @@
 #include "gimbal.hpp"
 #include "solver.hpp"
 #include "tracker.hpp"
+#include "viz.hpp"
 
 int main(int, char *argv[])
 {
@@ -107,17 +108,13 @@ int main(int, char *argv[])
                  sizeof address);
 
         for (const auto &armor : armors) // 画面上的检测结果
-        {
-            for (size_t i = 0; i < 4; ++i)
-                cv::line(frame.img, armor.corners[i], armor.corners[(i + 1) % 4],
-                         armor.solved ? cv::Scalar(0, 255, 0) : cv::Scalar(128, 128, 128), 2);
-        }
+            vision::draw_quad(frame.img, armor.corners,
+                              armor.solved ? vision::color_detected : vision::color_unsolved);
 
         if (tracked)
         {
             const auto corners = solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0));
-            for (size_t i = 0; i < 4; ++i) // 深绿：滤波后的当前位置
-                cv::line(frame.img, corners[i], corners[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
+            vision::draw_quad(frame.img, corners, vision::color_tracked); // 深绿：滤波后的当前位置
         }
 
         cv::imshow("plot_test", frame.img);

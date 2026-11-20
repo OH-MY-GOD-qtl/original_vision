@@ -12,6 +12,7 @@
 #include "gimbal.hpp"
 #include "solver.hpp"
 #include "tracker.hpp"
+#include "viz.hpp"
 
 namespace
 {
@@ -50,9 +51,7 @@ int main(int, char *argv[])
         {
             if (!armor.solved)
                 continue;
-            for (size_t i = 0; i < 4; ++i)
-                cv::line(frame.img, armor.corners[i], armor.corners[(i + 1) % 4],
-                         cv::Scalar(0, 255, 0), 2);
+            vision::draw_quad(frame.img, armor.corners, vision::color_detected);
         }
 
         if (tracked)
@@ -74,9 +73,8 @@ int main(int, char *argv[])
             cv::circle(frame.img, center, 3, cv::Scalar(255, 255, 255), -1);
 
             const auto now =
-                solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0)); // 深绿：滤波后的当前位置
-            for (size_t i = 0; i < 4; ++i)
-                cv::line(frame.img, now[i], now[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
+                solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0));
+            vision::draw_quad(frame.img, now, vision::color_tracked); // 深绿：滤波后的当前位置
 
             // 击打位置：交给 Aimer 算，工具不重复弹道
             const auto command =
@@ -87,11 +85,10 @@ int main(int, char *argv[])
             const auto future = solver.project(
                 tracked->armor(0.0) + lead_scale * (aim - tracked->armor(0.0)),
                 tracked->armor_yaw(command.flight));
-            for (size_t i = 0; i < 4; ++i) // 红：击打位置
-                cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
+            vision::draw_quad(frame.img, future, vision::color_hit); // 红：击打位置
 
             const cv::Point2f ahead = vision::center_of(future);
-            cv::circle(frame.img, ahead, 4, cv::Scalar(0, 0, 255), -1); // 红点：击打点
+            cv::circle(frame.img, ahead, 4, vision::color_hit, -1); // 红点：击打点
 
             cv::putText(
                 frame.img,

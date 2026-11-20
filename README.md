@@ -118,6 +118,7 @@ third_party/   海康 MVS SDK
   - `target.hpp` —— Tracker 产、Aimer 消费
   - `command.hpp` —— Aimer 产、Gimbal 消费
   - `angle.hpp` —— 角度约定 `direction_of` / `angles_of`，全项目共用
+  - `viz.hpp` —— 画面配色与 `draw_quad`，只给 `test/` 用
 - 图像与时间戳用 `Frame` 强绑定，不会配错
 - 错误沿数据流走，不靠返回值：解算失败 `Armor::solved` 保持 `false`，连续丢失超过 `track_max_lost` 帧才返回 `nullopt`
 - 相机 SDK 的头只在 `camera.cpp` 里包含（句柄用 `void*`）；调用方只依赖 `include/`，SDK 由 `camera` 目标私有链接
@@ -164,7 +165,7 @@ target.armor(t) // 圆心 + 速度 * t + 半径 * (sin(theta + omega t), 0, cos(
 
 - 六个测试工具按“流水线切在第 N 个模块”排列：`camera_test` → `detector_test` → `solver_test` → `plot_test` → `tracker_test` → `auto_aim_test`；越靠后包含越多上游模块
 - 测试工具全部只读；`auto_aim_test` 把即将发出的 31 字节帧折算成 `tx/*` 键推给 PlotJuggler，配合 `err/*` 可以直接看“指令减云台”还差多少
-- 画面配色统一语义：绿框本帧检测、深绿框滤波位置、红框红点击打位置、灰框检出但未解算
+- 画面配色统一语义：绿框本帧检测、深绿框滤波位置、红框红点击打位置、灰框检出但未解算；常量定义在 `viz.hpp`，四个工具不再各写一份
 - 标定链同样按职责拆分：`timestamp_check` 看时间、`detector_tuning` 调检测、`capture` + `camera_calib` 标内参
 - 因为配置与算法只有一份，观察窗里看到的就是总链路里实际跑的东西
 

@@ -20,18 +20,13 @@
 #include "gimbal.hpp"
 #include "solver.hpp"
 #include "tracker.hpp"
+#include "viz.hpp"
 
 namespace
 {
 
 constexpr double rad2deg = 180.0 / CV_PI; // 串口上下行都是弧度，只有上屏才转度
 constexpr double lead_scale = 1.0;        // 调试用：把击打点相对当前装甲板的位移放大，1 为真实值
-
-void draw(cv::Mat &img, const std::array<cv::Point2f, 4> &corners, const cv::Scalar &color)
-{
-    for (size_t i = 0; i < 4; ++i)
-        cv::line(img, corners[i], corners[(i + 1) % 4], color, 2);
-}
 
 } // namespace
 
@@ -133,12 +128,13 @@ int main(int, char *argv[])
         for (const auto &armor : armors) // 亮绿：本帧检测且解算成功
         {
             if (armor.solved)
-                draw(frame.img, armor.corners, cv::Scalar(0, 255, 0));
+                vision::draw_quad(frame.img, armor.corners, vision::color_detected);
         }
 
         if (tracked) // 深绿：滤波后的位置
-            draw(frame.img, solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0)),
-                 cv::Scalar(0, 128, 0));
+            vision::draw_quad(frame.img,
+                              solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0)),
+                              vision::color_tracked);
 
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;
@@ -147,14 +143,13 @@ int main(int, char *argv[])
         const Eigen::Vector3d now = tracked ? tracked->armor(0.0) : aim; // 无目标时退化到自身
         const double yaw = tracked ? tracked->armor_yaw(command.flight) : 0.0; // 弹着时的板面朝向
         const auto box = solver.project(now + lead_scale * (aim - now), yaw);
-        draw(frame.img, box, cv::Scalar(0, 0, 255)); // 红框：击打位置
+        vision::draw_quad(frame.img, box, vision::color_hit); // 红框：击打位置
 
         const auto at = vision::center_of(box);
         const cv::Scalar cyan(255, 255, 0);
-        const cv::Scalar red(0, 0, 255);
-        cv::circle(frame.img, at, 10, red, 2); // 红圈红叉：击打点
-        cv::line(frame.img, at - cv::Point2f(16, 0), at + cv::Point2f(16, 0), red, 1);
-        cv::line(frame.img, at - cv::Point2f(0, 16), at + cv::Point2f(0, 16), red, 1);
+        cv::circle(frame.img, at, 10, vision::color_hit, 2); // 红圈红叉：击打点
+        cv::line(frame.img, at - cv::Point2f(16, 0), at + cv::Point2f(16, 0), vision::color_hit, 1);
+        cv::line(frame.img, at - cv::Point2f(0, 16), at + cv::Point2f(0, 16), vision::color_hit, 1);
 
         cv::putText(frame.img,
                     cv::format("yaw %+.2f  pitch %+.2f  d %.2f  %s", cmd_yaw, cmd_pitch,
