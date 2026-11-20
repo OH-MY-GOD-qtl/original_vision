@@ -12,11 +12,17 @@ namespace
 constexpr double deg2rad = 3.14159265358979323846 / 180.0;
 
 // 装甲板四角：灯条中轴线端点，单位 m，y 朝下，左上 右上 右下 左下
-std::vector<cv::Point3f> model_points(double gap_m, double length_m)
+// tilt 是板面相对竖直的倾角，上边缘后仰时为正
+std::vector<cv::Point3f> model_points(double gap_m, double length_m, double tilt)
 {
     const auto hx = static_cast<float>(gap_m / 2);
     const auto hy = static_cast<float>(length_m / 2);
-    return {{-hx, -hy, 0}, {hx, -hy, 0}, {hx, hy, 0}, {-hx, hy, 0}};
+    const auto c = static_cast<float>(std::cos(tilt));
+    const auto s = static_cast<float>(std::sin(tilt));
+    return {{-hx, -hy * c, hy * s},
+            {hx, -hy * c, hy * s},
+            {hx, hy * c, -hy * s},
+            {-hx, hy * c, -hy * s}};
 }
 
 } // namespace
@@ -35,7 +41,9 @@ Solver::Solver(const std::string &config_path)
 
     const double gap_m = yaml["lightbar_gap"].as<double>() / 1000.0;
     const double length_m = yaml["lightbar_length"].as<double>() / 1000.0;
-    model_ = model_points(gap_m, length_m);
+    // 配置按「板面与地面夹角」给，竖直是 90，减掉 90 才是相对竖直的后仰角
+    const double tilt = (yaml["armor_tilt_deg"].as<double>() - 90.0) * deg2rad;
+    model_ = model_points(gap_m, length_m, tilt);
 
     // 手眼：先绕光轴 roll，再低头 pitch，最后偏右 yaw
     const double yaw = yaml["handeye_yaw_deg"].as<double>() * deg2rad;
@@ -81,9 +89,9 @@ void Solver::solve(Armor &armor)
 
 std::array<cv::Point2f, 4> Solver::project(const Eigen::Vector3d &xyz, double yaw) const
 {
-    // 板面绕世界竖直轴转到实际朝向；yaw 是板面法线的世界偏航角
+    // 板面绕世界竖直轴转到实际朝向；模型 +z 指向板内，所以转到法线朝内是 yaw + pi
     const Eigen::Matrix3d R_plate2world =
-        Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitY()).toRotationMatrix();
+        Eigen::AngleAxisd(yaw + CV_PI, Eigen::Vector3d::UnitY()).toRotationMatrix();
 
     std::vector<cv::Point3f> points;
     for (const auto &p : model_)

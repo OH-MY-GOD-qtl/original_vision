@@ -24,6 +24,7 @@ distort_coeffs: [-0.0756689153, 0.1281247, 5.57990328e-05, -2.47610297e-05, 0]
 # 装甲板：灯条长边、两灯条中心线间距，mm
 lightbar_length: 55
 lightbar_gap: 130
+armor_tilt_deg: 112 # 板面与地面的夹角，度；竖直板为 90，大于 90 表示上边缘后仰
 # 手眼：相机相对炮管的安装角，度；正为偏右 / 偏下 / 图像顺时针
 handeye_yaw_deg: 0.0
 handeye_pitch_deg: 0.0
