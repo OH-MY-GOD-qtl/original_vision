@@ -131,10 +131,11 @@ int main(int, char *argv[])
                 vision::draw_quad(frame.img, armor.corners, vision::color_detected);
         }
 
-        if (tracked) // 深绿：滤波后的位置
-            vision::draw_quad(frame.img,
-                              solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0)),
-                              vision::color_tracked);
+        if (tracked) // 深绿：滤波后每块板的位置
+            for (int i = 0; i < tracked->count; ++i)
+                vision::draw_quad(
+                    frame.img, solver.project(tracked->armor(0.0, i), tracked->armor_yaw(0.0, i)),
+                    vision::color_tracked);
 
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;

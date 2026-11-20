@@ -72,9 +72,10 @@ int main(int, char *argv[])
             const cv::Point2f center = vision::center_of(middle);
             cv::circle(frame.img, center, 3, cv::Scalar(255, 255, 255), -1);
 
-            const auto now =
-                solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0));
-            vision::draw_quad(frame.img, now, vision::color_tracked); // 深绿：滤波后的当前位置
+            for (int i = 0; i < tracked->count; ++i) // 深绿：滤波后每块板的位置
+                vision::draw_quad(
+                    frame.img, solver.project(tracked->armor(0.0, i), tracked->armor_yaw(0.0, i)),
+                    vision::color_tracked);
 
             // 击打位置：交给 Aimer 算，工具不重复弹道
             const auto command =

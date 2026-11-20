@@ -28,6 +28,7 @@ Target Tracker::current() const
     target.radius = radius_;
     target.theta = x_(6);
     target.omega = x_(7);
+    target.count = armor_count_;
     return target;
 }
 
@@ -120,7 +121,7 @@ void Tracker::update(const Armor &armor)
 {
     // 板面角度是 atan2 出来的，落在 ±π；状态里的转角一直在累加，先折到同一分支
     double diff = std::remainder(armor.yaw - x_(6), 2 * CV_PI);
-    if (std::abs(diff) > CV_PI / armor_count_)
+    if (std::abs(diff) > plate_spacing(armor_count_) / 2)
     {
         x_(6) += diff; // 换板：转角直接对齐新板，转速不受影响
         diff = 0.0;    // 这一帧已经对齐，不再用它修正转角
