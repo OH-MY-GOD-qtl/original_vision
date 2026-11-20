@@ -79,17 +79,23 @@ void Solver::solve(Armor &armor)
     armor.solved = true;
 }
 
-std::array<cv::Point2f, 4> Solver::project(const Eigen::Vector3d &xyz) const
+std::array<cv::Point2f, 4> Solver::project(const Eigen::Vector3d &xyz, double yaw) const
 {
-    // 世界系 → 俯仰系 → 相机系，hand-eye 的逆变换
-    const Eigen::Vector3d p_camera =
-        R_camera2gimbal_.transpose() * (R_gimbal2world_.inverse() * xyz - t_camera2gimbal_);
+    // 板面绕世界竖直轴转到实际朝向；yaw 是板面法线的世界偏航角
+    const Eigen::Matrix3d R_plate2world =
+        Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitY()).toRotationMatrix();
 
     std::vector<cv::Point3f> points;
     for (const auto &p : model_)
-        points.emplace_back(p.x + static_cast<float>(p_camera.x()),
-                            p.y + static_cast<float>(p_camera.y()),
-                            p.z + static_cast<float>(p_camera.z()));
+    {
+        const Eigen::Vector3d p_world = xyz + R_plate2world * Eigen::Vector3d(p.x, p.y, p.z);
+        // 世界系 → 俯仰系 → 相机系，hand-eye 的逆变换
+        const Eigen::Vector3d p_camera =
+            R_camera2gimbal_.transpose() *
+            (R_gimbal2world_.inverse() * p_world - t_camera2gimbal_);
+        points.emplace_back(static_cast<float>(p_camera.x()), static_cast<float>(p_camera.y()),
+                            static_cast<float>(p_camera.z()));
+    }
 
     std::vector<cv::Point2f> pixels;
     const cv::Vec3d zero(0, 0, 0); // 点已在相机系，旋转和平移都填 0

@@ -65,6 +65,7 @@ Command Aimer::aim(
     last_command_.yaw = toward_zero(last_command_.yaw, step);
     last_command_.pitch = toward_zero(last_command_.pitch, step);
     last_command_.distance = 0.0;
+    last_command_.flight = 0.0;
     return last_command_;
 }
 
@@ -84,6 +85,7 @@ Command Aimer::solve(
     command.yaw = angles.x();
     command.pitch = angles.y(); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
     command.distance = aim.norm();
+    command.flight = flight;
     return command;
 }
 

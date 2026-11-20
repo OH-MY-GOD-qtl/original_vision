@@ -115,7 +115,7 @@ int main(int, char *argv[])
 
         if (tracked)
         {
-            const auto corners = solver.project(tracked->armor(0.0));
+            const auto corners = solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0));
             for (size_t i = 0; i < 4; ++i) // 深绿：滤波后的当前位置
                 cv::line(frame.img, corners[i], corners[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
         }

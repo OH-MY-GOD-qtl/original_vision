@@ -18,6 +18,7 @@ struct Target
 
     Eigen::Vector3d armor(double t) const;          // t 秒后装甲板的位置
     Eigen::Vector3d armor_velocity(double t) const; // t 秒后装甲板的速度
+    double armor_yaw(double t) const;               // t 秒后板面法线的世界偏航角
 };
 
 inline Eigen::Vector3d Target::armor(double t) const
@@ -31,5 +32,7 @@ inline Eigen::Vector3d Target::armor_velocity(double t) const
     const double a = theta + omega * t;
     return velocity + radius * omega * Eigen::Vector3d(std::cos(a), 0.0, -std::sin(a));
 }
+
+inline double Target::armor_yaw(double t) const { return theta + omega * t; }
 
 } // namespace vision

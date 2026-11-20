@@ -64,16 +64,17 @@ int main(int, char *argv[])
                 const double a = i * CV_PI / 18;
                 const Eigen::Vector3d p = tracked->center + tracked->radius * Eigen::Vector3d(
                                                                 std::sin(a), 0, std::cos(a));
-                const auto corner = solver.project(p);
+                const auto corner = solver.project(p, a);
                 const cv::Point2f point = vision::center_of(corner);
                 ring.emplace_back(cvRound(point.x), cvRound(point.y));
             }
             cv::polylines(frame.img, ring, false, cv::Scalar(255, 128, 0), 1);
-            const auto middle = solver.project(tracked->center);
+            const auto middle = solver.project(tracked->center, tracked->theta);
             const cv::Point2f center = vision::center_of(middle);
             cv::circle(frame.img, center, 3, cv::Scalar(255, 255, 255), -1);
 
-            const auto now = solver.project(tracked->armor(0.0)); // 深绿：滤波后的当前位置
+            const auto now =
+                solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0)); // 深绿：滤波后的当前位置
             for (size_t i = 0; i < 4; ++i)
                 cv::line(frame.img, now[i], now[(i + 1) % 4], cv::Scalar(0, 128, 0), 2);
 
@@ -83,8 +84,9 @@ int main(int, char *argv[])
                           frame.timestamp);
             const Eigen::Vector3d aim =
                 vision::direction_of(command.yaw, command.pitch) * command.distance;
-            const auto future = solver.project(tracked->armor(0.0) +
-                                               lead_scale * (aim - tracked->armor(0.0)));
+            const auto future = solver.project(
+                tracked->armor(0.0) + lead_scale * (aim - tracked->armor(0.0)),
+                tracked->armor_yaw(command.flight));
             for (size_t i = 0; i < 4; ++i) // 红：击打位置
                 cv::line(frame.img, future[i], future[(i + 1) % 4], cv::Scalar(0, 0, 255), 2);
 

@@ -137,14 +137,16 @@ int main(int, char *argv[])
         }
 
         if (tracked) // 深绿：滤波后的位置
-            draw(frame.img, solver.project(tracked->armor(0.0)), cv::Scalar(0, 128, 0));
+            draw(frame.img, solver.project(tracked->armor(0.0), tracked->armor_yaw(0.0)),
+                 cv::Scalar(0, 128, 0));
 
         // 指令方向在瞄准距离处的装甲板位置，归零期没有距离，取 5m 兜底
         const double distance = command.distance > 0.0 ? command.distance : 5.0;
         const Eigen::Vector3d aim =
             vision::direction_of(command.yaw, command.pitch) * distance;
-        const Eigen::Vector3d now = tracked ? tracked->armor(0.0) : aim; // 无目标时退化到真实击打点
-        const auto box = solver.project(now + lead_scale * (aim - now)); // 提前量与重力一起放大
+        const Eigen::Vector3d now = tracked ? tracked->armor(0.0) : aim; // 无目标时退化到自身
+        const double yaw = tracked ? tracked->armor_yaw(command.flight) : 0.0; // 弹着时的板面朝向
+        const auto box = solver.project(now + lead_scale * (aim - now), yaw);
         draw(frame.img, box, cv::Scalar(0, 0, 255)); // 红框：击打位置
 
         const auto at = vision::center_of(box);

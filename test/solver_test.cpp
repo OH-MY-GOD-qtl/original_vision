@@ -45,7 +45,7 @@ int main(int, char *argv[])
 
             // 洋红线：板面法线，指向相机方向；它和装甲板方位一致说明角度解算对
             const Eigen::Vector3d normal(std::sin(armor.yaw), 0.0, std::cos(armor.yaw));
-            const auto tail = solver.project(armor.xyz + 0.15 * normal);
+            const auto tail = solver.project(armor.xyz + 0.15 * normal, armor.yaw);
             const cv::Point2f tip = vision::center_of(tail);
             cv::line(frame.img, center, tip, cv::Scalar(255, 0, 255), 2);
 

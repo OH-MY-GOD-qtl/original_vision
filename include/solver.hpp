@@ -24,8 +24,8 @@ class Solver
 
     void solve(Armor &armor); // 成功填 xyz 与板面 yaw 并置 solved，失败保持 false
 
-    // 世界系 → 像素：把装甲板四角投回图像，姿态按正面朝相机处理，仅供可视化
-    std::array<cv::Point2f, 4> project(const Eigen::Vector3d &xyz) const;
+    // 世界系 → 像素：把装甲板四角按 yaw 转到实际朝向再投回图像，仅供可视化
+    std::array<cv::Point2f, 4> project(const Eigen::Vector3d &xyz, double yaw) const;
 
   private:
     cv::Mat camera_matrix_;          // 3×3 内参，像素
