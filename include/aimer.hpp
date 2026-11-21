@@ -22,6 +22,7 @@ class Aimer
 
   private:
     Command solve(const Target &target, double bullet_speed) const;
+    int best_plate(const Target &target, double t) const; // t 时刻最正面朝向相机的板
 
     double gravity_;          // 重力加速度，m/s²，方向竖直向下
     double lost_hold_s_;      // 丢失目标后原位停留时长

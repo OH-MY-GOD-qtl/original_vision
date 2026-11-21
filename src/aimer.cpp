@@ -67,6 +67,7 @@ Command Aimer::aim(
     last_command_.pitch = toward_zero(last_command_.pitch, step);
     last_command_.distance = 0.0;
     last_command_.flight = 0.0;
+    last_command_.armor_yaw = 0.0;
     return last_command_;
 }
 
@@ -78,7 +79,9 @@ Command Aimer::solve(const Target &target, double bullet_speed) const
     const double flight = rough.norm() / bullet_speed;
 
     // 曝光中点到云台到位还要 latency_s_，那时板子已经又走了一段，一起算进预瞄
-    Eigen::Vector3d aim = target.armor(flight + latency_s_);
+    const double hit = flight + latency_s_;
+    const int plate = best_plate(target, hit); // 弹丸到达时正对相机的那块，不是当前锁定的那块
+    Eigen::Vector3d aim = target.armor(hit, plate);
     aim.y() -= 0.5 * gravity_ * flight * flight; // 重力下坠，y 朝下所以减 y 等于抬高
 
     const Eigen::Vector2d angles = angles_of(aim);
@@ -87,7 +90,26 @@ Command Aimer::solve(const Target &target, double bullet_speed) const
     command.pitch = angles.y(); // 仰角，与 Solver 的 Ry*Rx 云台模型一致
     command.distance = aim.norm();
     command.flight = flight;
+    command.armor_yaw = target.armor_yaw(hit, plate); // 框的朝向按这块板画
     return command;
+}
+
+int Aimer::best_plate(const Target &target, double t) const
+{
+    // 板面法线沿半径向外，与「板指向相机」最平行的那块最正对
+    int best = 0;
+    double best_face = -1.0;
+    for (int i = 0; i < target.count; ++i)
+    {
+        const double face =
+            direction_of(target.armor_yaw(t, i), 0.0).dot(-target.armor(t, i).normalized());
+        if (face > best_face)
+        {
+            best_face = face;
+            best = i;
+        }
+    }
+    return best;
 }
 
 } // namespace vision

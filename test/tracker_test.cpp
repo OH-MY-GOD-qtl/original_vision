@@ -85,7 +85,7 @@ int main(int, char *argv[])
                 vision::direction_of(command.yaw, command.pitch) * command.distance;
             const auto future = solver.project(
                 tracked->armor(0.0) + lead_scale * (aim - tracked->armor(0.0)),
-                tracked->armor_yaw(command.flight));
+                command.armor_yaw); // 朝向用 Aimer 选中的那块板
             vision::draw_quad(frame.img, future, vision::color_hit); // 红：击打位置
 
             const cv::Point2f ahead = vision::center_of(future);

@@ -142,8 +142,7 @@ int main(int, char *argv[])
         const Eigen::Vector3d aim =
             vision::direction_of(command.yaw, command.pitch) * distance;
         const Eigen::Vector3d now = tracked ? tracked->armor(0.0) : aim; // 无目标时退化到自身
-        const double yaw = tracked ? tracked->armor_yaw(command.flight) : 0.0; // 弹着时的板面朝向
-        const auto box = solver.project(now + lead_scale * (aim - now), yaw);
+        const auto box = solver.project(now + lead_scale * (aim - now), command.armor_yaw);
         vision::draw_quad(frame.img, box, vision::color_hit); // 红框：击打位置
 
         const auto at = vision::center_of(box);
