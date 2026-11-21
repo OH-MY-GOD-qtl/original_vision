@@ -31,6 +31,7 @@ Aimer::Aimer(const std::string &config_path)
     gravity_ = yaml["gravity"].as<double>();
     lost_hold_s_ = yaml["lost_hold_ms"].as<double>() / 1000.0;
     return_rad_per_s_ = yaml["return_deg_per_s"].as<double>() * deg2rad;
+    latency_s_ = yaml["latency_ms"].as<double>() / 1000.0;
 }
 
 Command Aimer::aim(
@@ -51,7 +52,7 @@ Command Aimer::aim(
     if (target)
     {
         last_target_ = t;
-        last_command_ = solve(*target, bullet_speed, t);
+        last_command_ = solve(*target, bullet_speed);
         last_command_.is_empty = false;
         return last_command_;
     }
@@ -69,15 +70,15 @@ Command Aimer::aim(
     return last_command_;
 }
 
-Command Aimer::solve(
-    const Target &target, double bullet_speed, std::chrono::steady_clock::time_point) const
+Command Aimer::solve(const Target &target, double bullet_speed) const
 {
     // 预瞄点越远飞行时间越长，时间越长预瞄点又越远，先粗算一轮再修正
     const double now_range = target.armor(0.0).norm();
-    const Eigen::Vector3d rough = target.armor(now_range / bullet_speed);
+    const Eigen::Vector3d rough = target.armor(now_range / bullet_speed + latency_s_);
     const double flight = rough.norm() / bullet_speed;
 
-    Eigen::Vector3d aim = target.armor(flight); // 装甲板沿圆周走到那儿
+    // 曝光中点到云台到位还要 latency_s_，那时板子已经又走了一段，一起算进预瞄
+    Eigen::Vector3d aim = target.armor(flight + latency_s_);
     aim.y() -= 0.5 * gravity_ * flight * flight; // 重力下坠，y 朝下所以减 y 等于抬高
 
     const Eigen::Vector2d angles = angles_of(aim);
