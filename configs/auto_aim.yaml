@@ -34,7 +34,7 @@ handeye_roll_deg: 0.0
 handeye_offset_mm: [-54.12, 8.00, 157.00]
 
 # ---- 跟踪 ----
-armor_radius: 250.0         # 装甲板到旋转中心的水平距离，mm，板子尺寸固定所以写死
+armor_radius: 200.0         # 装甲板到旋转中心的水平距离，mm，板子尺寸固定所以写死
 armor_count: 4              # 装甲板数量，相邻两块间隔 360/armor_count 度
 track_process_noise: 100.0  # 圆心过程噪声谱密度，越大越信观测、越跟得上机动
 track_measure_noise: 0.01   # 位置观测噪声方差，m²（0.01 约等于 10cm 标准差）
@@ -46,6 +46,7 @@ track_max_lost: 20          # 连续丢失多少帧后放弃，165fps 下约 120
 # 丢失目标后原位停留 lost_hold_ms，再按 return_deg_per_s 缓慢归零
 lost_hold_ms: 3000.0
 return_deg_per_s: 30.0
+latency_ms: 12.0            # 曝光中点到云台到位的延迟，ms，打运动靶标定
 
 # ---- 云台 ----
 bullet_speed: 23.0 # 弹速，m/s，回传优先，断线时用这个兜底

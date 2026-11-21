@@ -17,7 +17,7 @@
 namespace
 {
 
-constexpr double lead_scale = 3.0; // 调试用：把击打点相对当前装甲板的位移放大，1 为真实值
+constexpr double lead_scale = 1.0; // 调试用：把击打点相对当前装甲板的位移放大，1 为真实值
 
 } // namespace
 
