@@ -120,7 +120,7 @@ third_party/   海康 MVS SDK
   - `angle.hpp` —— 角度约定 `direction_of` / `angles_of`，全项目共用
   - `viz.hpp` —— 画面配色与 `draw_quad`，只给 `test/` 用
 - 图像与时间戳用 `Frame` 强绑定，不会配错
-- 错误沿数据流走，不靠返回值：解算失败 `Armor::solved` 保持 `false`，连续丢失超过 `track_max_lost` 帧才返回 `nullopt`
+- 错误沿数据流走，不靠返回值：解算失败 `Armor::solved` 保持 `false`，连续丢失超过 `track_max_lost_ms` 才返回 `nullopt`
 - 相机 SDK 的头只在 `camera.cpp` 里包含（句柄用 `void*`）；调用方只依赖 `include/`，SDK 由 `camera` 目标私有链接
 - 只有 `apps/auto_aim` 调 `Gimbal::send`；`test/` 与 `calibration/` 全部只读，调参不会误发指令
 

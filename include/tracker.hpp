@@ -33,9 +33,9 @@ class Tracker
     State x_ = State::Zero();
     Covariance P_ = Covariance::Identity();
 
-    std::chrono::steady_clock::time_point last_{}; // 上一帧时刻
-    bool inited_ = false;                          // 是否已用第一帧初始化
-    int lost_ = 0;                                 // 连续丢失帧数
+    std::chrono::steady_clock::time_point last_{};      // 上一帧时刻
+    std::chrono::steady_clock::time_point last_seen_{}; // 最后一次配上装甲板的时刻
+    bool inited_ = false;                               // 是否已用第一帧初始化
 
     double process_noise_;  // 圆心过程噪声谱密度，越大越信观测
     double measure_noise_;  // 观测噪声方差，m²
@@ -43,7 +43,7 @@ class Tracker
     double rotation_noise_; // 角速度谱密度，越大越跟得上急转
     double radius_;         // 装甲板到中心的水平距离，m，固定值
     int armor_count_;       // 装甲板数量，相邻两块间隔 360°/armor_count
-    int max_lost_;          // 连续丢失多少帧后放弃
+    double max_lost_s_;     // 连续丢失多久后放弃，s
 };
 
 } // namespace vision

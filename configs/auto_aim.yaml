@@ -40,7 +40,7 @@ track_process_noise: 100.0  # 圆心过程噪声谱密度，越大越信观测�
 track_measure_noise: 0.01   # 位置观测噪声方差，m²（0.01 约等于 10cm 标准差）
 track_yaw_noise: 0.01       # 板面角度观测噪声方差，rad²（0.01 约等于 5.7°）
 track_rotation_noise: 1.0   # 角速度谱密度，越大越跟得上急转
-track_max_lost: 20          # 连续丢失多少帧后放弃，165fps 下约 120ms
+track_max_lost_ms: 120.0    # 连续丢失多久后放弃，ms
 
 # ---- 瞄准 ----
 # 丢失目标后原位停留 lost_hold_ms，再按 return_deg_per_s 缓慢归零

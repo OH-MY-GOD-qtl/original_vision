@@ -17,7 +17,7 @@ Tracker::Tracker(const std::string &config_path)
     rotation_noise_ = yaml["track_rotation_noise"].as<double>();
     radius_ = yaml["armor_radius"].as<double>() / 1000.0; // 配置写 mm，算的时候用 m
     armor_count_ = yaml["armor_count"].as<int>();
-    max_lost_ = yaml["track_max_lost"].as<int>();
+    max_lost_s_ = yaml["track_max_lost_ms"].as<double>() / 1000.0;
 }
 
 Target Tracker::current() const
@@ -54,8 +54,8 @@ std::optional<Target> Tracker::track(
         P_.setZero();
         P_.diagonal() << 1, 1, 1, 100, 100, 100, 0.1, 25; // 速度、转速都先不信
         last_ = t;
+        last_seen_ = t;
         inited_ = true;
-        lost_ = 0;
 
         return current(); // omega 保持 0，等第二帧才有转速
     }
@@ -80,7 +80,7 @@ std::optional<Target> Tracker::track(
 
     if (!nearest)
     {
-        if (++lost_ > max_lost_)
+        if (std::chrono::duration<double>(t - last_seen_).count() > max_lost_s_)
         {
             inited_ = false; // 丢太久，下块板重新起步
             return std::nullopt;
@@ -88,7 +88,7 @@ std::optional<Target> Tracker::track(
         return current(); // 短暂丢失就靠预测撑过去
     }
 
-    lost_ = 0;
+    last_seen_ = t;
     update(*nearest);
     return current();
 }
